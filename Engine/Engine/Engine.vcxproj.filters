@@ -32,5 +32,8 @@
     <ClInclude Include="..\Src\dx.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\dlls.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

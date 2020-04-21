@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "dx.h"
+#include "dlls.h"
 
 class Device
 {

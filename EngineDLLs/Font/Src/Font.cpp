@@ -1,4 +1,7 @@
+#define FONT_EXPORT __declspec(dllexport)
+
 #include "Font.h"
+#include <Windows.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <stdarg.h>
@@ -11,7 +14,7 @@ namespace ENGINEDLL
 	SpriteFont* CFONT::m_pFont = nullptr;
 	bool CFONT::m_bInit = false;
 
-	BOOL CFONT::Init(ID3D11Device * pDevice, const wchar_t* filename)
+	BOOL FONT_EXPORT CFONT::Init(ID3D11Device * pDevice, const TCHAR* filename)
 	{
 		BOOL res = TRUE;
 
@@ -44,7 +47,7 @@ namespace ENGINEDLL
 		return res;
 	}
 
-	void CFONT::Release()
+	void FONT_EXPORT CFONT::Release()
 	{
 		if (m_pFont != nullptr)
 		{
@@ -61,7 +64,7 @@ namespace ENGINEDLL
 		m_bInit = false;
 	}
 
-	void CFONT::Begin()
+	void FONT_EXPORT CFONT::Begin()
 	{
 		if (m_bInit)
 		{
@@ -88,13 +91,13 @@ namespace ENGINEDLL
 		}
 	}
 
-	void CFONT::End()
+	void FONT_EXPORT CFONT::End()
 	{
 		if(m_bInit)
 			m_pBatch->End();
 	}
 
-	void CFONT::PrintInfo(int x, int y, XMFLOAT4 col, const wchar_t * msg, ...)
+	void FONT_EXPORT CFONT::PrintInfo(int x, int y, XMFLOAT4 col, const TCHAR * msg, ...)
 	{
 		if (m_bInit)
 		{
@@ -117,4 +120,22 @@ namespace ENGINEDLL
 			);
 		}
 	}
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
+{
+	switch (fdwReason)
+	{
+	case DLL_PROCESS_ATTACH:
+		break;
+	case DLL_PROCESS_DETACH:
+		break;
+
+	case DLL_THREAD_ATTACH:
+		break;
+	case DLL_THREAD_DETACH:
+		break;
+	}
+
+	return TRUE;
 }

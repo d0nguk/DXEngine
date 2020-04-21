@@ -1,3 +1,5 @@
+#define INPUT_EXPORT __declspec(dllexport)
+
 #include "Input.h"
 
 namespace ENGINEDLL

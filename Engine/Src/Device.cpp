@@ -44,6 +44,7 @@ BOOL Device::Run()
 
 void Device::Release()
 {
+	ReleaseDX();
 	ReleaseWindow();
 }
 
@@ -202,6 +203,8 @@ HRESULT Device::InitDX()
 
 	SetViewport();
 
+	CFONT::Init(m_pDevice, L"..\\..\\Extern\\Font\\±¼¸²9k.sfont");
+
 	return hr;
 }
 
@@ -217,8 +220,10 @@ void Device::Render()
 
 void Device::ReleaseDX()
 {
-	//if(m_pDXDC != nullptr)
-	m_pDXDC->ClearState();
+	CFONT::Release();
+
+	if(m_pDXDC != nullptr)
+		m_pDXDC->ClearState();
 
 	if (m_pRenderTarget != nullptr)
 	{
