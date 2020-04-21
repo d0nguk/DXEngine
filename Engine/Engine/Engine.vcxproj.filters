@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Device">
+      <UniqueIdentifier>{25cd6740-aeed-4f27-94c5-8e11d7792d35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Device\001_Device">
+      <UniqueIdentifier>{65899ef1-1d21-46e3-9d93-c673d7c3fce0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{06dc61c7-6bff-4261-a75e-66fff6901689}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{27728fa5-37fc-4a9e-8aa6-c502c214ca93}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Src\Device.cpp">
+      <Filter>Device\001_Device</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Src\Device.h">
+      <Filter>Device\001_Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\stdafx.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\dx.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
