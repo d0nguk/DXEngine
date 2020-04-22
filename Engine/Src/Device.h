@@ -10,7 +10,7 @@ public:
 	Device(HINSTANCE hInst);
 	~Device();
 
-#pragma region WINDOW
+#pragma region WINDOWS
 public:
 	BOOL Init();
 	BOOL Run();
@@ -36,24 +36,31 @@ private:
 #pragma region DX
 private:
 	HRESULT InitDX();
-	void Update();
-	void Render();
 	void ReleaseDX();
 
 private:
 	HRESULT CreateDeviceAndSwapChain();
 	HRESULT CreateRenderTarget();
+	HRESULT CreateDepthStencilView();
 	void SetViewport();
 
+#pragma region RENDERING
 private:
 	void ClearBackBuffer();
+	void Update();
+	void Render();
 	void Flip();
+#pragma endregion
 
 private:
 	ID3D11Device*				m_pDevice;
 	ID3D11DeviceContext*		m_pDXDC;
 	IDXGISwapChain*				m_pSwapChain;
 	ID3D11RenderTargetView*		m_pRenderTarget;
+	ID3D11Texture2D*			m_pDS;
+	ID3D11DepthStencilView*		m_pDSView;
+
+	DXGI_MODE_DESC				m_Mode;
 
 	D3D_FEATURE_LEVEL			m_FeatureLevel;
 #pragma endregion

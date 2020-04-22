@@ -8,8 +8,8 @@ int WINAPI WinMain
 	int nCmdShow
 )
 {
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetBreakAlloc(157);
+	if(LEAKTEST)
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	Device device(hInst);
 
@@ -20,6 +20,8 @@ int WINAPI WinMain
 
 	device.Release();
 
-	_CrtDumpMemoryLeaks();
+	if (LEAKTEST)
+		_CrtDumpMemoryLeaks();
+
 	return 0;
 }

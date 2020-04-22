@@ -12,7 +12,9 @@ Device::Device(HINSTANCE hInst)
 	m_wWindowName(L"WINDOW"),
 	m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0)
 {
-
+	m_Mode.Width = 800;
+	m_Mode.Height = 600;
+	m_Mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 }
 
 Device::~Device()
@@ -76,8 +78,7 @@ BOOL Device::InitWindow()
 		m_wWindowName,
 		WS_OVERLAPPEDWINDOW,
 		0, 0,
-		//m_Mode.Width, m_Mode.Height,
-		800, 600,
+		m_Mode.Width, m_Mode.Height,
 		GetDesktopWindow(),
 		NULL,
 		wc.hInstance,
@@ -132,7 +133,7 @@ BOOL Device::MessagePump()
 {
 	MSG msg;
 	::memset(&msg, NULL, sizeof(MSG));
-
+	
 	while (1)
 	{
 		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -147,8 +148,8 @@ BOOL Device::MessagePump()
 		{
 			// Rendering
 			ClearBackBuffer();
-			Update();
-			Render();
+			//Update();
+			//Render();
 			Flip();
 		}
 	}
@@ -198,24 +199,15 @@ HRESULT Device::InitDX()
 	(
 		1,
 		&m_pRenderTarget,
-		nullptr
+		m_pDSView
 	);
 
 	SetViewport();
 
 	CFONT::Init(m_pDevice, L"..\\..\\Extern\\Font\\±¼¸²9k.sfont");
-
+	OutputDebugStringW(L"ASDF");
+	
 	return hr;
-}
-
-void Device::Update()
-{
-
-}
-
-void Device::Render()
-{
-
 }
 
 void Device::ReleaseDX()
@@ -257,9 +249,9 @@ HRESULT Device::CreateDeviceAndSwapChain()
 	sd.Windowed = TRUE;
 	sd.OutputWindow = m_hWnd;
 	sd.BufferCount = 1;
-	sd.BufferDesc.Width = 800;
-	sd.BufferDesc.Height = 600;
-	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	sd.BufferDesc.Width = m_Mode.Width;
+	sd.BufferDesc.Height = m_Mode.Height;
+	sd.BufferDesc.Format = m_Mode.Format;
 	sd.BufferDesc.RefreshRate.Numerator = 0;
 	sd.BufferDesc.RefreshRate.Numerator = 1;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -306,14 +298,51 @@ HRESULT Device::CreateRenderTarget()
 	return hr;
 }
 
+HRESULT Device::CreateDepthStencilView()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_TEXTURE2D_DESC td;
+	::memset(&td, NULL, sizeof(D3D11_TEXTURE2D_DESC));
+
+	td.Width = m_Mode.Width;
+	td.Height = m_Mode.Height;
+	td.MipLevels = 1;
+	td.ArraySize = 1;
+	td.Format = DXGI_FORMAT_D32_FLOAT;
+	td.SampleDesc.Count = 1;
+	td.SampleDesc.Quality = 0;
+	td.Usage = D3D11_USAGE_DEFAULT;
+	td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	td.CPUAccessFlags = 0;
+	td.MiscFlags = 0;
+
+	hr = m_pDevice->CreateTexture2D(&td, NULL, &m_pDS);
+	if (FAILED(hr))
+		return hr;
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC dd;
+	::memset(&dd, NULL, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+
+	dd.Format = td.Format;
+	dd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	dd.Texture2D.MipSlice = 0;
+
+	hr = m_pDevice->CreateDepthStencilView(m_pDS, &dd, &m_pDSView);
+	if (FAILED(hr))
+		return hr;
+
+	return hr;
+}
+
 void Device::SetViewport()
 {
 	D3D11_VIEWPORT vp;
 
 	vp.TopLeftX = 0.0f;
 	vp.TopLeftY = 0.0f;
-	vp.Width = 800.0f;
-	vp.Height = 600.0f;
+	vp.Width = (float)m_Mode.Width;
+	vp.Height = (float)m_Mode.Height;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 
@@ -322,9 +351,20 @@ void Device::SetViewport()
 
 void Device::ClearBackBuffer()
 {
-	XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);;
+	XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);
 
 	m_pDXDC->ClearRenderTargetView(m_pRenderTarget, (float*)&col);
+	m_pDXDC->ClearDepthStencilView(m_pDSView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void Device::Update()
+{
+
+}
+
+void Device::Render()
+{
+
 }
 
 void Device::Flip()

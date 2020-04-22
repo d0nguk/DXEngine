@@ -88,6 +88,8 @@ namespace ENGINEDLL
 				DirectX::SpriteSortMode::SpriteSortMode_Deferred,
 				pBlend, pSampler, pDepth, pRaster
 			);
+
+			pDXDC->Release();
 		}
 	}
 
