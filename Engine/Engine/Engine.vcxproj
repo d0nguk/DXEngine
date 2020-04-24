@@ -19,19 +19,37 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Src\BufferCreater.cpp" />
     <ClCompile Include="..\Src\Device.cpp" />
+    <ClCompile Include="..\Src\GameObject.cpp" />
     <ClCompile Include="..\Src\main.cpp" />
+    <ClCompile Include="..\Src\Shader.cpp" />
+    <ClCompile Include="..\Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Src\BufferCreater.h" />
     <ClInclude Include="..\Src\Device.h" />
     <ClInclude Include="..\Src\dlls.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\Src\dx.h" />
+    <ClInclude Include="..\Src\GameObject.h" />
+    <ClInclude Include="..\Src\iComponent.h" />
+    <ClInclude Include="..\Src\iGameObject.h" />
+    <ClInclude Include="..\Src\Shader.h" />
+    <ClInclude Include="..\Src\stdafx.h" />
+    <ClInclude Include="..\Src\Transform.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Src\hlsl\SolidColor.fx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="..\Src\dx.h" />
-    <ClInclude Include="..\Src\stdafx.h" />
+    </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

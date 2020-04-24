@@ -8,8 +8,11 @@ int WINAPI WinMain
 	int nCmdShow
 )
 {
-	if(LEAKTEST)
+	if (LEAKTEST)
+	{
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		//_CrtSetBreakAlloc(154);
+	}
 
 	Device device(hInst);
 

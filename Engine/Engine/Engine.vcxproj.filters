@@ -13,6 +13,39 @@
     <Filter Include="Headers">
       <UniqueIdentifier>{27728fa5-37fc-4a9e-8aa6-c502c214ca93}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GameObject">
+      <UniqueIdentifier>{7e3f8f98-0628-43aa-bab9-3862ab781f13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Objects">
+      <UniqueIdentifier>{39ab88b8-4fa8-4c39-b715-3b03fc77b4e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Objects\001_Interface">
+      <UniqueIdentifier>{eaf3f3bf-db8b-4f9a-92d0-35541e48c7d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\ObjectManagement">
+      <UniqueIdentifier>{c524b174-f680-46e9-875a-76ea710c0636}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\ObjectManagement\001_BufferCreater">
+      <UniqueIdentifier>{56d86167-c11a-4b72-bece-df6adaaa3010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Objects\002_GameObject">
+      <UniqueIdentifier>{51434b2b-bce0-4b3a-9529-fda72d098bd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Components">
+      <UniqueIdentifier>{c59a9fe7-958d-4c29-9b31-224b013d4760}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Components\001_Interface">
+      <UniqueIdentifier>{8c889043-a3c7-4e89-8c5e-53198e73bd7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Components\002_Transform">
+      <UniqueIdentifier>{998bfc4d-13ab-4cae-9aa6-1f04294758af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{c3801bd1-6b81-45f4-af9f-361e8bf93820}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\fx">
+      <UniqueIdentifier>{ec6fd8f4-5d2f-49ba-993b-a41ef64f0955}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Device.cpp">
@@ -20,6 +53,18 @@
     </ClCompile>
     <ClCompile Include="..\Src\main.cpp">
       <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\BufferCreater.cpp">
+      <Filter>GameObject\ObjectManagement\001_BufferCreater</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\GameObject.cpp">
+      <Filter>GameObject\Objects\002_GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Transform.cpp">
+      <Filter>GameObject\Components\002_Transform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Shader.cpp">
+      <Filter>Shader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -35,5 +80,28 @@
     <ClInclude Include="..\Src\dlls.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\iGameObject.h">
+      <Filter>GameObject\Objects\001_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\BufferCreater.h">
+      <Filter>GameObject\ObjectManagement\001_BufferCreater</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\GameObject.h">
+      <Filter>GameObject\Objects\002_GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Transform.h">
+      <Filter>GameObject\Components\002_Transform</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\iComponent.h">
+      <Filter>GameObject\Components\001_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Shader.h">
+      <Filter>Shader</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Src\hlsl\SolidColor.fx">
+      <Filter>Shader\fx</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

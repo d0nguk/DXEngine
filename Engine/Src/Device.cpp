@@ -1,5 +1,9 @@
 #include "Device.h"
 
+#include "BufferCreater.h"
+
+Device* Device::pDevice = nullptr;
+
 LRESULT CALLBACK gMsgProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	return Device::MsgProc(hWnd, iMsg, wParam, lParam);
@@ -26,12 +30,24 @@ BOOL Device::Init()
 {
 	BOOL res = TRUE;
 
-	res = InitWindow();
-	if (!res)
-		return res;
+	if (pDevice == nullptr)
+	{
+		res = InitWindow();
+		if (!res)
+			return res;
 
-	if (FAILED(InitDX()))
-		return FALSE;
+		if (FAILED(InitDX()))
+			return FALSE;
+
+		pDevice = this;
+
+		res = LoadData();
+		if (!res)
+			return res;
+
+		m_Obj = new GameObject();
+		m_Obj->Init();
+	}
 
 	return res;
 }
@@ -46,6 +62,9 @@ BOOL Device::Run()
 
 void Device::Release()
 {
+	delete m_Obj;
+	m_Obj = nullptr;
+	ReleaseData();
 	ReleaseDX();
 	ReleaseWindow();
 }
@@ -148,8 +167,9 @@ BOOL Device::MessagePump()
 		{
 			// Rendering
 			ClearBackBuffer();
-			//Update();
-			//Render();
+			Update();
+			Render();
+			PrintInfo();
 			Flip();
 		}
 	}
@@ -195,6 +215,10 @@ HRESULT Device::InitDX()
 	if (FAILED(hr))
 		return hr;
 
+	hr = CreateDepthStencilView();
+	if (FAILED(hr))
+		return hr;
+
 	m_pDXDC->OMSetRenderTargets
 	(
 		1,
@@ -204,7 +228,6 @@ HRESULT Device::InitDX()
 
 	SetViewport();
 
-	CFONT::Init(m_pDevice, L"..\\..\\Extern\\Font\\±¼¸²9k.sfont");
 	OutputDebugStringW(L"ASDF");
 	
 	return hr;
@@ -212,8 +235,6 @@ HRESULT Device::InitDX()
 
 void Device::ReleaseDX()
 {
-	CFONT::Release();
-
 	if(m_pDXDC != nullptr)
 		m_pDXDC->ClearState();
 
@@ -359,15 +380,107 @@ void Device::ClearBackBuffer()
 
 void Device::Update()
 {
-
+	m_Obj->Update();
+	m_Obj->LateUpdate();
 }
 
 void Device::Render()
 {
+	m_Obj->Render();
+}
 
+void Device::PrintInfo()
+{
+	return;
+
+	CFONT::Begin();
+
+	CFONT::PrintInfo(1, 1, XMFLOAT4(1, 1, 1, 1), L"ASDF");
+
+	CFONT::End();
 }
 
 void Device::Flip()
 {
 	m_pSwapChain->Present(0, 0);
+}
+
+BOOL Device::LoadData()
+{
+	BOOL res = TRUE;
+
+	if (FAILED(LoadShader()))
+		return FALSE;
+
+	res = LoadAddOn();
+	if (!res)
+		return res;
+
+	res = LoadManager();
+	if (!res)
+		return res;
+
+	return res;
+}
+
+void Device::ReleaseData()
+{
+	ReleaseManager();
+	ReleaseAddOn();
+	ReleaseShader();
+}
+
+HRESULT Device::LoadShader()
+{
+	HRESULT hr = S_OK;
+
+	m_pShader = new Shader();
+	hr = m_pShader->Create(L"..\\Src\\hlsl\\SolidColor.fx", _LAYOUT::L_POS);
+	if (FAILED(hr))
+		return hr;
+
+	g_pShader = m_pShader;
+
+	return hr;
+}
+
+BOOL Device::LoadAddOn()
+{
+	BOOL res = TRUE;
+
+	res = CFONT::Init(m_pDevice, L"..\\..\\Extern\\Font\\±¼¸²9k.sfont");
+	if (!res)
+		return res;
+
+	return res;
+}
+
+BOOL Device::LoadManager()
+{
+	BOOL res = TRUE;
+
+	BufferCreater::Init(m_pDevice);
+
+	return res;
+}
+
+void Device::ReleaseShader()
+{
+	if (m_pShader != nullptr)
+	{
+		delete m_pShader;
+		m_pShader = nullptr;
+	}
+
+	g_pShader = nullptr;
+}
+
+void Device::ReleaseAddOn()
+{
+	CFONT::Release();
+}
+
+void Device::ReleaseManager()
+{
+	BufferCreater::Release();
 }
