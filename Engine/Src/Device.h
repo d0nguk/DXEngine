@@ -5,6 +5,7 @@
 #include "dlls.h"
 #include "Shader.h"
 #include "GameObject.h"
+#include "Camera.h"
 
 class Device
 {
@@ -46,6 +47,17 @@ private:
 	HRESULT CreateDepthStencilView();
 	void SetViewport();
 
+private:
+	HRESULT CreateStateObject();
+	HRESULT CreateRasterState();
+	HRESULT CreateDepthStencilState();
+	HRESULT CreateSamplerState();
+
+	void ReleaseStateObject();
+	void ReleaseRasterState();
+	void ReleaseDepthStencilState();
+	void ReleaseSamplerState();
+
 public:
 	static ID3D11Device* GetDevice() { return pDevice->m_pDevice; }
 	static ID3D11DeviceContext* GetDXDC() { return pDevice->m_pDXDC; }
@@ -54,6 +66,7 @@ public:
 private:
 	void ClearBackBuffer();
 	void Update();
+	void LateUpdate();
 	void Render();
 	void PrintInfo();
 	void Flip();
@@ -62,12 +75,17 @@ private:
 private:
 	static Device* pDevice;
 
-	ID3D11Device*				m_pDevice;
-	ID3D11DeviceContext*		m_pDXDC;
-	IDXGISwapChain*				m_pSwapChain;
-	ID3D11RenderTargetView*		m_pRenderTarget;
-	ID3D11Texture2D*			m_pDS;
-	ID3D11DepthStencilView*		m_pDSView;
+private:
+	ID3D11Device				*m_pDevice;
+	ID3D11DeviceContext			*m_pDXDC;
+	IDXGISwapChain				*m_pSwapChain;
+	ID3D11RenderTargetView		*m_pRenderTarget;
+	ID3D11Texture2D				*m_pDS;
+	ID3D11DepthStencilView		*m_pDSView;
+
+	ID3D11RasterizerState		*m_pRState;
+	ID3D11DepthStencilState		*m_pDSState;
+	ID3D11SamplerState			*m_pSState;
 
 	DXGI_MODE_DESC				m_Mode;
 
@@ -81,14 +99,19 @@ private:
 
 private:
 	HRESULT LoadShader();
+	BOOL LoadCamera();
 	BOOL LoadAddOn();
 	BOOL LoadManager();
+	void ReleaseCamera();
 	void ReleaseShader();
 	void ReleaseAddOn();
 	void ReleaseManager();
 
 private:
-	Shader* m_pShader;
-	iGameObject* m_Obj;
+	XMFLOAT4		m_vTime;
+
+	Camera			*m_pCamera;
+	Shader			*m_pShader;
+	iGameObject		*m_pObj;
 #pragma endregion
 };

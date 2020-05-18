@@ -80,6 +80,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /y "$(OutDir)Input.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Input.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Input.h" "..\..\Extern\Custom\Inc"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -91,6 +96,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /y "$(OutDir)Input.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Input.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Input.h" "..\..\Extern\Custom\Inc"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -106,6 +116,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /y "$(OutDir)Input.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Input.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Input.h" "..\..\Extern\Custom\Inc"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -121,6 +136,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /y "$(OutDir)Input.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Input.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Input.h" "..\..\Extern\Custom\Inc"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\Input.cpp" />

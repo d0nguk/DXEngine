@@ -1,6 +1,8 @@
 #include "Device.h"
 
-#include "BufferCreater.h"
+#include "BufferCreator.h"
+#include "MeshCreator.h"
+#include "GeoLoader.h"
 
 Device* Device::pDevice = nullptr;
 
@@ -45,8 +47,8 @@ BOOL Device::Init()
 		if (!res)
 			return res;
 
-		m_Obj = new GameObject();
-		m_Obj->Init();
+		m_pObj = new GameObject();
+		m_pObj->Init();
 	}
 
 	return res;
@@ -62,8 +64,8 @@ BOOL Device::Run()
 
 void Device::Release()
 {
-	delete m_Obj;
-	m_Obj = nullptr;
+	delete m_pObj;
+	m_pObj = nullptr;
 	ReleaseData();
 	ReleaseDX();
 	ReleaseWindow();
@@ -168,6 +170,7 @@ BOOL Device::MessagePump()
 			// Rendering
 			ClearBackBuffer();
 			Update();
+			LateUpdate();
 			Render();
 			PrintInfo();
 			Flip();
@@ -228,7 +231,9 @@ HRESULT Device::InitDX()
 
 	SetViewport();
 
-	OutputDebugStringW(L"ASDF");
+	hr = CreateStateObject();
+	if (FAILED(hr))
+		return hr;
 	
 	return hr;
 }
@@ -237,6 +242,8 @@ void Device::ReleaseDX()
 {
 	if(m_pDXDC != nullptr)
 		m_pDXDC->ClearState();
+
+	ReleaseStateObject();
 
 	if (m_pRenderTarget != nullptr)
 	{
@@ -370,6 +377,141 @@ void Device::SetViewport()
 	m_pDXDC->RSSetViewports(1, &vp);
 }
 
+HRESULT Device::CreateStateObject()
+{
+	HRESULT hr = S_OK;
+
+	hr = CreateRasterState();
+	if (FAILED(hr))
+		return hr;
+
+	hr = CreateDepthStencilState();
+	if (FAILED(hr))
+		return hr;
+
+	hr = CreateSamplerState();
+	if (FAILED(hr))
+		return hr;
+
+	return hr;
+}
+
+HRESULT Device::CreateRasterState()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_RASTERIZER_DESC rd;
+	::memset(&rd, NULL, sizeof(D3D11_RASTERIZER_DESC));
+
+	rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+	rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+	rd.FrontCounterClockwise = FALSE;
+	rd.DepthBias = 0;
+	rd.DepthBiasClamp = 0;
+	rd.SlopeScaledDepthBias = 0;
+	rd.DepthClipEnable = FALSE;
+	rd.ScissorEnable = FALSE;
+	rd.MultisampleEnable = TRUE;
+	rd.AntialiasedLineEnable = FALSE;
+
+	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->RSSetState(m_pRState);
+
+	return hr;
+}
+
+HRESULT Device::CreateDepthStencilState()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_DEPTH_STENCIL_DESC dd;
+	::memset(&dd, NULL, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+	// ZWrite On, ZTest On
+	dd.DepthEnable = TRUE;
+	dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dd.DepthFunc = D3D11_COMPARISON_LESS;
+	dd.StencilEnable = FALSE;
+
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->OMSetDepthStencilState(m_pDSState, 0);
+
+	return hr;
+}
+
+HRESULT Device::CreateSamplerState()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_SAMPLER_DESC sd;
+	::memset(&sd, NULL, sizeof(D3D11_SAMPLER_DESC));
+
+	sd.Filter = D3D11_FILTER::D3D11_FILTER_ANISOTROPIC;
+	sd.MaxAnisotropy = 1;
+
+	sd.MinLOD = 0;
+	sd.MaxLOD = D3D11_FLOAT32_MAX;
+	sd.MipLODBias = 0;
+
+	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sd.BorderColor[0] = 1;
+	sd.BorderColor[1] = 1;
+	sd.BorderColor[2] = 1;
+	sd.BorderColor[3] = 1;
+
+	sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	hr = m_pDevice->CreateSamplerState(&sd, &m_pSState);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->PSSetSamplers(0, 1, &m_pSState);
+
+	return hr;
+}
+
+void Device::ReleaseStateObject()
+{
+	ReleaseSamplerState();
+	ReleaseDepthStencilState();
+	ReleaseRasterState();
+}
+
+void Device::ReleaseRasterState()
+{
+	if (m_pRState != nullptr)
+	{
+		m_pRState->Release();
+		m_pRState = nullptr;
+	}
+}
+
+void Device::ReleaseDepthStencilState()
+{
+	if (m_pDSState != nullptr)
+	{
+		m_pDSState->Release();
+		m_pDSState = nullptr;
+	}
+}
+
+void Device::ReleaseSamplerState()
+{
+	if (m_pSState != nullptr)
+	{
+		m_pSState->Release();
+		m_pSState = nullptr;
+	}
+}
+
 void Device::ClearBackBuffer()
 {
 	XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);
@@ -380,19 +522,37 @@ void Device::ClearBackBuffer()
 
 void Device::Update()
 {
-	m_Obj->Update();
-	m_Obj->LateUpdate();
+	CTIMER::Update();
+
+	m_vTime = XMFLOAT4
+	(
+		CTIMER::DeltaTime(),
+		CTIMER::UnscaledDeltaTime(),
+		CTIMER::Time(),
+		CTIMER::UnscaledTime()
+	);
+	
+	CINPUT::Update(m_vTime.x);
+
+	g_pShader->SetTime(m_vTime);
+
+	//m_pCamera->Update();
+	m_pObj->Update(m_vTime.x);
+}
+
+void Device::LateUpdate()
+{
+	m_pCamera->LateUpdate();
+	m_pObj->LateUpdate(m_vTime.x);
 }
 
 void Device::Render()
 {
-	m_Obj->Render();
+	m_pObj->Render();
 }
 
 void Device::PrintInfo()
 {
-	return;
-
 	CFONT::Begin();
 
 	CFONT::PrintInfo(1, 1, XMFLOAT4(1, 1, 1, 1), L"ASDF");
@@ -412,6 +572,10 @@ BOOL Device::LoadData()
 	if (FAILED(LoadShader()))
 		return FALSE;
 
+	res = LoadCamera();
+	if (!res)
+		return res;
+
 	res = LoadAddOn();
 	if (!res)
 		return res;
@@ -427,6 +591,7 @@ void Device::ReleaseData()
 {
 	ReleaseManager();
 	ReleaseAddOn();
+	ReleaseCamera();
 	ReleaseShader();
 }
 
@@ -435,7 +600,7 @@ HRESULT Device::LoadShader()
 	HRESULT hr = S_OK;
 
 	m_pShader = new Shader();
-	hr = m_pShader->Create(L"..\\Src\\hlsl\\SolidColor.fx", _LAYOUT::L_POS);
+	hr = m_pShader->Create(L"..\\Src\\hlsl\\SolidColor_pnu.fx", _LAYOUT::L_POS_NRM_UV1);
 	if (FAILED(hr))
 		return hr;
 
@@ -444,13 +609,32 @@ HRESULT Device::LoadShader()
 	return hr;
 }
 
-BOOL Device::LoadAddOn()
+BOOL Device::LoadCamera()
 {
 	BOOL res = TRUE;
 
+	m_pCamera = new Camera();
+	res = m_pCamera->Init(float(m_Mode.Width), float(m_Mode.Height), m_Mode.Width / float(m_Mode.Height));
+	if (!res)
+		return FALSE;
+
+	return TRUE;
+}
+
+BOOL Device::LoadAddOn()
+{
+	BOOL res = TRUE;
+	
 	res = CFONT::Init(m_pDevice, L"..\\..\\Extern\\Font\\±¼¸²9k.sfont");
 	if (!res)
 		return res;
+
+	HRESULT hr = S_OK;
+	hr = CINPUT::Init(m_hInst, m_hWnd, m_Mode.Width, m_Mode.Height);
+	if (FAILED(hr))
+		return FALSE;
+
+	CTIMER::Init();
 
 	return res;
 }
@@ -459,9 +643,22 @@ BOOL Device::LoadManager()
 {
 	BOOL res = TRUE;
 
-	BufferCreater::Init(m_pDevice);
+	BufferCreator::Init(m_pDevice);
+	MeshCreator::Init(m_pDevice);
+
+	GeoLoader::Init();
+	GeoLoader::LoadGeometry(L"..\\model2.txt", L"cube");
 
 	return res;
+}
+
+void Device::ReleaseCamera()
+{
+	if (m_pCamera != nullptr)
+	{
+		delete m_pCamera;
+		m_pCamera = nullptr;
+	}
 }
 
 void Device::ReleaseShader()
@@ -477,10 +674,14 @@ void Device::ReleaseShader()
 
 void Device::ReleaseAddOn()
 {
+	CTIMER::Release();
+	CINPUT::Release();
 	CFONT::Release();
 }
 
 void Device::ReleaseManager()
 {
-	BufferCreater::Release();
+	GeoLoader::Release();
+	MeshCreator::Release();
+	BufferCreator::Release();
 }

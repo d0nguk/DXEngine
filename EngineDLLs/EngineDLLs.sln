@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Font", "Font\Font.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Input", "Input\Input.vcxproj", "{F367D572-609E-48A3-B25F-20B4C9566800}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timer", "Timer\Timer.vcxproj", "{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{F367D572-609E-48A3-B25F-20B4C9566800}.Release|x64.Build.0 = Release|x64
 		{F367D572-609E-48A3-B25F-20B4C9566800}.Release|x86.ActiveCfg = Release|Win32
 		{F367D572-609E-48A3-B25F-20B4C9566800}.Release|x86.Build.0 = Release|Win32
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Debug|x64.ActiveCfg = Debug|x64
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Debug|x64.Build.0 = Debug|x64
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Debug|x86.ActiveCfg = Debug|Win32
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Debug|x86.Build.0 = Debug|Win32
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Release|x64.ActiveCfg = Release|x64
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Release|x64.Build.0 = Release|x64
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Release|x86.ActiveCfg = Release|Win32
+		{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

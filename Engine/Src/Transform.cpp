@@ -1,29 +1,32 @@
 #include "Transform.h"
 
-Transform::Transform()
+Transform::Transform() :
+	m_vPos(Position),
+	m_vRot(Rotation),
+	m_vScale(Scale)
 {
 
 }
 
 Transform::~Transform()
 {
-
+	Release();
 }
 
 BOOL Transform::Init()
 {
-	m_vPos = XMFLOAT3(0, 0, 0);
-	m_vRot = XMFLOAT3(0, 0, 0);
-	m_vScale = XMFLOAT3(1, 1, 1);
+	Position = XMFLOAT3(0, 0, 0);
+	Rotation = XMFLOAT3(0, 0, 0);
+	Scale = XMFLOAT3(1, 1, 1);
 
 	return TRUE;
 }
 
 BOOL Transform::Init(XMFLOAT3 vPos, XMFLOAT3 vRot, XMFLOAT3 vScale)
 {
-	m_vPos = vPos;
-	m_vRot = vRot;
-	m_vScale = vScale;
+	Position = vPos;
+	Rotation = vRot;
+	Scale = vScale;
 
 	return TRUE;
 }

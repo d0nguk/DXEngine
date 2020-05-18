@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{7246A4ED-61F1-4D73-9503-FC5B337593E6}</ProjectGuid>
-    <RootNamespace>Font</RootNamespace>
+    <ProjectGuid>{DF3C44A5-B2C8-4239-8247-CAA9602ADF44}</ProjectGuid>
+    <RootNamespace>Timer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -29,27 +29,27 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -76,16 +76,14 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Extern\Inc;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\Extern\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(OutDir)Font.lib" "..\..\Extern\Custom\Lib"
-copy /y "$(OutDir)Font.dll" "..\..\Extern\Custom\Lib"
-copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
+      <Command>copy /y "$(OutDir)Timer.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Timer.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Timer.h" "..\..\Extern\Custom\Inc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -94,16 +92,14 @@ copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Extern\Inc;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\Extern\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(OutDir)Font.lib" "..\..\Extern\Custom\Lib"
-copy /y "$(OutDir)Font.dll" "..\..\Extern\Custom\Lib"
-copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
+      <Command>copy /y "$(OutDir)Timer.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Timer.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Timer.h" "..\..\Extern\Custom\Inc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,18 +110,16 @@ copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Extern\Inc;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\Extern\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(OutDir)Font.lib" "..\..\Extern\Custom\Lib"
-copy /y "$(OutDir)Font.dll" "..\..\Extern\Custom\Lib"
-copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
+      <Command>copy /y "$(OutDir)Timer.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Timer.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Timer.h" "..\..\Extern\Custom\Inc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -136,28 +130,23 @@ copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Extern\Inc;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\Extern\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "$(OutDir)Font.lib" "..\..\Extern\Custom\Lib"
-copy /y "$(OutDir)Font.dll" "..\..\Extern\Custom\Lib"
-copy /y "$(ProjectDir)Src\Font.h" "..\..\Extern\Custom\Inc"</Command>
+      <Command>copy /y "$(OutDir)Timer.lib" "..\..\Extern\Custom\Lib"
+copy /y "$(OutDir)Timer.dll" "..\..\Extern\Custom\Lib"
+copy /y "$(ProjectDir)Src\Timer.h" "..\..\Extern\Custom\Inc"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Font.cpp" />
+    <ClCompile Include="Src\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\Font.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
+    <ClInclude Include="Src\Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

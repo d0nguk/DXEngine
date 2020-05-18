@@ -25,9 +25,6 @@
     <Filter Include="GameObject\ObjectManagement">
       <UniqueIdentifier>{c524b174-f680-46e9-875a-76ea710c0636}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GameObject\ObjectManagement\001_BufferCreater">
-      <UniqueIdentifier>{56d86167-c11a-4b72-bece-df6adaaa3010}</UniqueIdentifier>
-    </Filter>
     <Filter Include="GameObject\Objects\002_GameObject">
       <UniqueIdentifier>{51434b2b-bce0-4b3a-9529-fda72d098bd1}</UniqueIdentifier>
     </Filter>
@@ -46,6 +43,27 @@
     <Filter Include="Shader\fx">
       <UniqueIdentifier>{ec6fd8f4-5d2f-49ba-993b-a41ef64f0955}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Device\002_Camera">
+      <UniqueIdentifier>{afc6c9d2-1da6-49a8-bd14-0286bf5b2c8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\CBuffers">
+      <UniqueIdentifier>{4137d18c-3843-4739-b49b-7066455927ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Components\003_MeshRenderer">
+      <UniqueIdentifier>{d4293bc0-aa2a-411d-8f77-9b21059999bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\ObjectManagement\002_MeshCreator">
+      <UniqueIdentifier>{5d68cff9-16d9-4974-bcf0-b33c78960280}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\ObjectManagement\001_BufferCreator">
+      <UniqueIdentifier>{56d86167-c11a-4b72-bece-df6adaaa3010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\ObjectManagement\003_GeoLoader">
+      <UniqueIdentifier>{358cb01a-1459-4517-a45f-2c92bf11a04c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Data">
+      <UniqueIdentifier>{7e111d0c-477e-4e33-89f7-8fbc1e844a1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Device.cpp">
@@ -53,9 +71,6 @@
     </ClCompile>
     <ClCompile Include="..\Src\main.cpp">
       <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Src\BufferCreater.cpp">
-      <Filter>GameObject\ObjectManagement\001_BufferCreater</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\GameObject.cpp">
       <Filter>GameObject\Objects\002_GameObject</Filter>
@@ -65,6 +80,21 @@
     </ClCompile>
     <ClCompile Include="..\Src\Shader.cpp">
       <Filter>Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Camera.cpp">
+      <Filter>Device\002_Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\MeshRenderer.cpp">
+      <Filter>GameObject\Components\003_MeshRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\BufferCreator.cpp">
+      <Filter>GameObject\ObjectManagement\001_BufferCreator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\MeshCreator.cpp">
+      <Filter>GameObject\ObjectManagement\002_MeshCreator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\GeoLoader.cpp">
+      <Filter>GameObject\ObjectManagement\003_GeoLoader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,9 +113,6 @@
     <ClInclude Include="..\Src\iGameObject.h">
       <Filter>GameObject\Objects\001_Interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\BufferCreater.h">
-      <Filter>GameObject\ObjectManagement\001_BufferCreater</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\GameObject.h">
       <Filter>GameObject\Objects\002_GameObject</Filter>
     </ClInclude>
@@ -98,9 +125,42 @@
     <ClInclude Include="..\Src\Shader.h">
       <Filter>Shader</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Camera.h">
+      <Filter>Device\002_Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\cbMatrix.h">
+      <Filter>Shader\CBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\MeshRenderer.h">
+      <Filter>GameObject\Components\003_MeshRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\BufferCreator.h">
+      <Filter>GameObject\ObjectManagement\001_BufferCreator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\MeshCreator.h">
+      <Filter>GameObject\ObjectManagement\002_MeshCreator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\GeoLoader.h">
+      <Filter>GameObject\ObjectManagement\003_GeoLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Vertices.h">
+      <Filter>GameObject\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\MeshData.h">
+      <Filter>GameObject\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Geometries.h">
+      <Filter>GameObject\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\BufferData.h">
+      <Filter>GameObject\Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Src\hlsl\SolidColor.fx">
+      <Filter>Shader\fx</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\SolidColor_pnu.fx">
       <Filter>Shader\fx</Filter>
     </FxCompile>
   </ItemGroup>

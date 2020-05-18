@@ -1,10 +1,14 @@
 #include "GameObject.h"
-#include "BufferCreater.h"
 #include "Shader.h"
 #include "Device.h"
 
-GameObject::GameObject()
-	: m_Transform()
+#include "BufferCreator.h"
+#include "MeshCreator.h"
+#include "GeoLoader.h"
+
+GameObject::GameObject() :
+	m_pTransform(nullptr),
+	m_pMeshRenderer(nullptr)
 {
 
 }
@@ -17,49 +21,69 @@ GameObject::~GameObject()
 BOOL GameObject::Init()
 {
 	//m_Transform.Init(XMFLOAT3(0,0,0), XMFLOAT3(0,0,0), XMFLOAT3(1,1,1));
-	m_Transform.Init();
+	m_pTransform = new Transform();
+	m_pTransform->Init();
 
-	POS data[] = 
-	{
-		{ -0.5f, -0.5f, 0.0f },
-		{  0.0f,  0.5f, 0.0f }, 
-		{  0.5f, -0.5f, 0.0f },
-	};
-
-	if (FAILED(BufferCreater::LoadBuffer(L"cube", &m_pVBuffer, data, 36, D3D11_BIND_VERTEX_BUFFER)))
+	MeshData* pMesh = MeshCreator::LoadMesh(L"cube");
+	if (pMesh == nullptr)
 		return FALSE;
+
+	m_pMeshRenderer = new MeshRenderer();
+	m_pMeshRenderer->SetShader(g_pShader);
+	m_pMeshRenderer->SetMesh(pMesh);
 
 	return TRUE;
 }
 
 void GameObject::Update(float dTime)
 {
-	m_Transform.Update(dTime);
+	XMFLOAT3 dir = XMFLOAT3(0, 0, 0);
+	if (CINPUT::GetKeyPressed(DIK_LEFT))
+		dir.x -= 1.0f;
+	if (CINPUT::GetKeyPressed(DIK_RIGHT))
+		dir.x += 1.0f;
+	if (CINPUT::GetKeyPressed(DIK_UP))
+		dir.y += 1.0f;
+	if (CINPUT::GetKeyPressed(DIK_DOWN))
+		dir.y -= 1.0f;
+
+	XMVECTOR v = XMLoadFloat3(&dir);
+	XMStoreFloat3(&dir, XMVector3Normalize(v));
+
+	dir.x *= dTime;
+	dir.y *= dTime;
+	dir.z *= dTime;
+	m_pTransform->Translate(dir);
+
+	m_pTransform->Rotate(XM_PIDIV4 * dTime);
+
+	m_pTransform->Update(dTime);
 }
 
 void GameObject::LateUpdate(float dTime)
 {
-	m_Transform.LateUpdate(dTime);
+	m_pTransform->LateUpdate(dTime);
 }
 
 void GameObject::Render(float dTime)
 {
-	UINT stride = sizeof(POS);
-	UINT offset = 0;
 	ID3D11DeviceContext* pDXDC = Device::GetDXDC();
 
-	pDXDC->IASetVertexBuffers(0, 1, &m_pVBuffer, &stride, &offset);
-	pDXDC->IASetInputLayout(g_pShader->m_pLayout);
-	pDXDC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	g_pShader->SetShader();
-
-	pDXDC->Draw(3, 0);
+	XMFLOAT4X4 mTM = m_pTransform->GetTM();
+	m_pMeshRenderer->SetMatrix(mTM);
+	m_pMeshRenderer->Render();
 }
 
 void GameObject::Release()
 {
-	m_Transform.Release();
-
-	m_pVBuffer = nullptr;
+	if (m_pTransform != nullptr)
+	{
+		delete m_pTransform;
+		m_pTransform = nullptr;
+	}
+	if (m_pMeshRenderer != nullptr)
+	{
+		delete m_pMeshRenderer;
+		m_pMeshRenderer = nullptr;
+	}
 }

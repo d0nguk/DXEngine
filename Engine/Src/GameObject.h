@@ -1,12 +1,11 @@
 #pragma once
 
 #include "iGameObject.h"
-#include "Transform.h"
 
-struct POS
-{
-	float x, y, z;
-};
+#include "Transform.h"
+#include "MeshRenderer.h"
+
+#include "Vertices.h"
 
 class GameObject : public iGameObject
 {
@@ -22,7 +21,6 @@ public:
 	virtual void Release() override;
 
 protected:
-	Transform m_Transform;
-
-	ID3D11Buffer* m_pVBuffer;
+	Transform *m_pTransform;
+	MeshRenderer *m_pMeshRenderer;
 };

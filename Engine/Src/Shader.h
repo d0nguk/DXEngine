@@ -6,6 +6,8 @@
 #include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler")
 
+#include "cbMatrix.h"
+
 typedef enum tagLAYOUT
 {
 	L_POS,
@@ -61,12 +63,22 @@ private:
 		const TCHAR* filename, const char* EntryPoint, const char* ShaderModel);
 
 public:
+	void SetMatrix(MATRIX type, XMFLOAT4X4 & matrix);
+	void SetTime(XMFLOAT4 & vTime);
+
+public:
 	ID3D11VertexShader*			m_pVS;
 	ID3D11PixelShader*			m_pPS;
 
 	ID3DBlob*					m_pVSCode;
 
 	ID3D11InputLayout*			m_pLayout;
+
+	ID3D11Buffer*				m_pCBMatrix;
+	ID3D11Buffer*				m_pCBTime;
+
+	cbMatrix					m_cbMatrix;
+	XMFLOAT4					m_cbTime;
 };
 
 extern Shader* g_pShader;

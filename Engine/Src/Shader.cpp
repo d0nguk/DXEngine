@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include "Device.h"
+#include <stdio.h>
 
 #pragma region LAYOUTS
 
@@ -91,6 +92,10 @@ HRESULT Shader::Create(const TCHAR * filename, _LAYOUT layout)
 	if (FAILED(hr))
 		return hr;
 
+	hr = CreateConstantBuffer();
+	if (FAILED(hr))
+		return hr;
+
 	return hr;
 }
 
@@ -123,17 +128,17 @@ void Shader::Release()
 		m_pVSCode->Release();
 		m_pVSCode = nullptr;
 	}
-
-	//SafeRelease(&m_pLayout);
-	//SafeRelease(&m_pPS);
-	//SafeRelease(&m_pVS);
-	//SafeRelease(&m_pVSCode);
 }
 
 void Shader::SetShader()
 {
-	Device::GetDXDC()->VSSetShader(m_pVS, nullptr, 0);
-	Device::GetDXDC()->PSSetShader(m_pPS, nullptr, 0);
+	ID3D11DeviceContext* pDXDC = Device::GetDXDC();
+
+	pDXDC->VSSetShader(m_pVS, nullptr, 0);
+	pDXDC->PSSetShader(m_pPS, nullptr, 0);
+
+	pDXDC->VSSetConstantBuffers(0, 1, &m_pCBMatrix);
+	pDXDC->PSSetConstantBuffers(1, 1, &m_pCBTime);
 }
 
 HRESULT Shader::LoadShader(const TCHAR * filename, _LAYOUT layout)
@@ -246,6 +251,15 @@ HRESULT Shader::CreateConstantBuffer()
 {
 	HRESULT hr = S_OK;
 
+	hr = CreateDynamicConstantBuffer(sizeof(cbMatrix), &m_cbMatrix, &m_pCBMatrix);
+	if (FAILED(hr))
+		return hr;
+
+	m_cbTime = XMFLOAT4(0, 0, 0, 0);
+	hr = CreateDynamicConstantBuffer(sizeof(XMFLOAT4), &m_cbTime, &m_pCBTime);
+	if (FAILED(hr))
+		return hr;
+
 	return hr;
 }
 
@@ -314,7 +328,11 @@ HRESULT Shader::UpdateDynamicConstantBuffer(ID3D11Resource * pBuff, LPVOID pData
 
 void Shader::ReleaseConstantBuffer()
 {
-
+	if(m_pCBTime != nullptr)
+	{
+		m_pCBTime->Release();
+		m_pCBTime = nullptr;
+	}
 }
 
 int Shader::GetShaderError(const TCHAR * msg, HRESULT hr, ID3DBlob * pBlob, const TCHAR * filename, const char * EntryPoint, const char * ShaderModel)
@@ -334,4 +352,23 @@ int Shader::GetShaderError(const TCHAR * msg, HRESULT hr, ID3DBlob * pBlob, cons
 	MessageBox(NULL, errmsg, L"Shader Compile Error", MB_OK);
 
 	return 0;
+}
+
+void Shader::SetMatrix(MATRIX type, XMFLOAT4X4 & matrix)
+{
+	m_cbMatrix.Matrix[type] = XMLoadFloat4x4(&matrix);
+
+	m_cbMatrix.Matrix[MATRIX::MVP] =
+		m_cbMatrix.Matrix[MATRIX::WORLD] *
+		m_cbMatrix.Matrix[MATRIX::VIEW] *
+		m_cbMatrix.Matrix[MATRIX::PROJ];
+
+	UpdateDynamicConstantBuffer(m_pCBMatrix, &m_cbMatrix, sizeof(cbMatrix));
+}
+
+void Shader::SetTime(XMFLOAT4 & vTime)
+{
+	m_cbTime = vTime;
+
+	UpdateDynamicConstantBuffer(m_pCBTime, &m_cbTime, sizeof(XMFLOAT4));
 }

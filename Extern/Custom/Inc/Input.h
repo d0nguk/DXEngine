@@ -27,6 +27,10 @@ namespace ENGINEDLL
 			KEYSTATE_MAX
 		};
 
+	private:
+		CINPUT() {}
+		~CINPUT() {}
+
 	public:
 		static HRESULT Init(HINSTANCE hInst, HWND hWnd, int width, int height);
 		static void Update(float dTime);

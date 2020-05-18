@@ -19,15 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Src\BufferCreater.cpp" />
+    <ClCompile Include="..\Src\BufferCreator.cpp" />
+    <ClCompile Include="..\Src\Camera.cpp" />
     <ClCompile Include="..\Src\Device.cpp" />
     <ClCompile Include="..\Src\GameObject.cpp" />
+    <ClCompile Include="..\Src\GeoLoader.cpp" />
     <ClCompile Include="..\Src\main.cpp" />
+    <ClCompile Include="..\Src\MeshCreator.cpp" />
+    <ClCompile Include="..\Src\MeshRenderer.cpp" />
     <ClCompile Include="..\Src\Shader.cpp" />
     <ClCompile Include="..\Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Src\BufferCreater.h" />
+    <ClInclude Include="..\Src\BufferCreator.h" />
+    <ClInclude Include="..\Src\BufferData.h" />
+    <ClInclude Include="..\Src\Camera.h" />
+    <ClInclude Include="..\Src\cbMatrix.h" />
     <ClInclude Include="..\Src\Device.h" />
     <ClInclude Include="..\Src\dlls.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -37,11 +44,17 @@
     </ClInclude>
     <ClInclude Include="..\Src\dx.h" />
     <ClInclude Include="..\Src\GameObject.h" />
+    <ClInclude Include="..\Src\GeoLoader.h" />
+    <ClInclude Include="..\Src\Geometries.h" />
     <ClInclude Include="..\Src\iComponent.h" />
     <ClInclude Include="..\Src\iGameObject.h" />
+    <ClInclude Include="..\Src\MeshCreator.h" />
+    <ClInclude Include="..\Src\MeshData.h" />
+    <ClInclude Include="..\Src\MeshRenderer.h" />
     <ClInclude Include="..\Src\Shader.h" />
     <ClInclude Include="..\Src\stdafx.h" />
     <ClInclude Include="..\Src\Transform.h" />
+    <ClInclude Include="..\Src\Vertices.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Src\hlsl\SolidColor.fx">
@@ -49,6 +62,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\SolidColor_pnu.fx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -116,7 +135,9 @@
       <AdditionalLibraryDirectories>..\..\Extern\Lib;..\..\Extern\Custom\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"</Command>
+      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Input.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Timer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,7 +153,9 @@
       <AdditionalLibraryDirectories>..\..\Extern\Lib;..\..\Extern\Custom\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"</Command>
+      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Input.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Timer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,7 +175,9 @@
       <AdditionalLibraryDirectories>..\..\Extern\Lib;..\..\Extern\Custom\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"</Command>
+      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Input.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Timer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -172,7 +197,9 @@
       <AdditionalLibraryDirectories>..\..\Extern\Lib;..\..\Extern\Custom\Lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"</Command>
+      <Command>copy /y "..\..\Extern\Custom\Lib\Font.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Input.dll" "$(OutDir)"
+copy /y "..\..\Extern\Custom\Lib\Timer.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

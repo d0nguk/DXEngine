@@ -44,3 +44,5 @@ namespace ENGINEDLL
 		static bool				m_bInit;
 	};
 }
+
+// copy /y "$(OutDir)Font.lib" "..\..\Test\Extern\Custom\Lib\"
