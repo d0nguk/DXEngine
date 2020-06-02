@@ -3,6 +3,7 @@
 #include "BufferCreator.h"
 #include "MeshCreator.h"
 #include "GeoLoader.h"
+#include "TextureLoader.h"
 
 Device* Device::pDevice = nullptr;
 
@@ -18,9 +19,12 @@ Device::Device(HINSTANCE hInst)
 	m_wWindowName(L"WINDOW"),
 	m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0)
 {
-	m_Mode.Width = 800;
-	m_Mode.Height = 600;
+	m_Mode.Width = 1600;
+	m_Mode.Height = 900;
 	m_Mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	m_iAF = 4;
+	m_iAA = 4;
 }
 
 Device::~Device()
@@ -47,8 +51,12 @@ BOOL Device::Init()
 		if (!res)
 			return res;
 
-		m_pObj = new GameObject();
+		m_pObj = new Character();
 		m_pObj->Init();
+		m_pSphere = new GameObject();
+		m_pSphere->Init();
+
+		m_pObjVector = new std::vector<iGameObject*>();
 	}
 
 	return res;
@@ -64,8 +72,37 @@ BOOL Device::Run()
 
 void Device::Release()
 {
-	delete m_pObj;
-	m_pObj = nullptr;
+	if (m_pObj != nullptr)
+	{
+		delete m_pObj;
+		m_pObj = nullptr;
+	}
+	if (m_pSphere != nullptr)
+	{
+		delete m_pSphere;
+		m_pSphere = nullptr;
+	}
+	if (m_pObjVector != nullptr)
+	{
+		if (m_pObjVector->size() > 0)
+		{
+			auto iter = m_pObjVector->begin();
+
+			for (; iter != m_pObjVector->end(); ++iter)
+			{
+				if (*iter != nullptr)
+				{
+					delete (*iter);
+					(*iter) = nullptr;
+				}
+			}
+		}
+
+		m_pObjVector->clear();
+		delete m_pObjVector;
+		m_pObjVector = nullptr;
+	}
+
 	ReleaseData();
 	ReleaseDX();
 	ReleaseWindow();
@@ -90,15 +127,18 @@ BOOL Device::InitWindow()
 
 	::RegisterClassEx(&wc);
 
-	RECT rc;
+	RECT rc, screen;
 	memset(&rc, NULL, sizeof(RECT));
+	memset(&screen, NULL, sizeof(RECT));
+	GetWindowRect(GetDesktopWindow(), &screen);
 
 	HWND hWnd = ::CreateWindow
 	(
 		m_wClassName,
 		m_wWindowName,
-		WS_OVERLAPPEDWINDOW,
-		0, 0,
+		WS_POPUP | WS_VISIBLE,
+		((screen.right - screen.left) - m_Mode.Width) * 0.5f,
+		((screen.bottom - screen.top) - m_Mode.Height) * 0.5f,
 		m_Mode.Width, m_Mode.Height,
 		GetDesktopWindow(),
 		NULL,
@@ -114,7 +154,7 @@ BOOL Device::InitWindow()
 	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 	::UpdateWindow(hWnd);
 
-	ResizeWindow(800, 600);
+	ResizeWindow(m_Mode.Width, m_Mode.Height);
 
 	return TRUE;
 }
@@ -284,7 +324,7 @@ HRESULT Device::CreateDeviceAndSwapChain()
 	sd.BufferDesc.RefreshRate.Numerator = 1;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	sd.SampleDesc.Count = 1;
+	sd.SampleDesc.Count = m_iAA;
 	sd.SampleDesc.Quality = 0;
 
 	hr = D3D11CreateDeviceAndSwapChain
@@ -338,7 +378,7 @@ HRESULT Device::CreateDepthStencilView()
 	td.MipLevels = 1;
 	td.ArraySize = 1;
 	td.Format = DXGI_FORMAT_D32_FLOAT;
-	td.SampleDesc.Count = 1;
+	td.SampleDesc.Count = m_iAA;
 	td.SampleDesc.Quality = 0;
 	td.Usage = D3D11_USAGE_DEFAULT;
 	td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -414,11 +454,18 @@ HRESULT Device::CreateRasterState()
 	rd.MultisampleEnable = TRUE;
 	rd.AntialiasedLineEnable = FALSE;
 
-	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState);
+	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState[_RASTER::RS_SOLID_BACK]);
 	if (FAILED(hr))
 		return hr;
 
-	m_pDXDC->RSSetState(m_pRState);
+	rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+
+	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState[_RASTER::RS_WIREFRAME_NONE]);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->RSSetState(m_pRState[_RASTER::RS_SOLID_BACK]);
 
 	return hr;
 }
@@ -436,11 +483,17 @@ HRESULT Device::CreateDepthStencilState()
 	dd.DepthFunc = D3D11_COMPARISON_LESS;
 	dd.StencilEnable = FALSE;
 
-	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState);
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_ON]);
 	if (FAILED(hr))
 		return hr;
 
-	m_pDXDC->OMSetDepthStencilState(m_pDSState, 0);
+	dd.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
+
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_OFF]);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_ON], 0);
 
 	return hr;
 }
@@ -453,7 +506,7 @@ HRESULT Device::CreateSamplerState()
 	::memset(&sd, NULL, sizeof(D3D11_SAMPLER_DESC));
 
 	sd.Filter = D3D11_FILTER::D3D11_FILTER_ANISOTROPIC;
-	sd.MaxAnisotropy = 1;
+	sd.MaxAnisotropy = m_iAF;
 
 	sd.MinLOD = 0;
 	sd.MaxLOD = D3D11_FLOAT32_MAX;
@@ -469,11 +522,19 @@ HRESULT Device::CreateSamplerState()
 	sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 
-	hr = m_pDevice->CreateSamplerState(&sd, &m_pSState);
+	hr = m_pDevice->CreateSamplerState(&sd, &m_pSState[_SAMPLER::SS_CLAMP]);
 	if (FAILED(hr))
 		return hr;
 
-	m_pDXDC->PSSetSamplers(0, 1, &m_pSState);
+	sd.AddressU = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+	sd.AddressV = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+	sd.AddressW = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+
+	hr = m_pDevice->CreateSamplerState(&sd, &m_pSState[_SAMPLER::SS_REPEAT]);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->PSSetSamplers(0, 1, &m_pSState[_SAMPLER::SS_REPEAT]);
 
 	return hr;
 }
@@ -487,34 +548,45 @@ void Device::ReleaseStateObject()
 
 void Device::ReleaseRasterState()
 {
-	if (m_pRState != nullptr)
+	for (int i = 0; i < _RASTER::RS_MAX; ++i)
 	{
-		m_pRState->Release();
-		m_pRState = nullptr;
+		if (m_pRState[i] != nullptr)
+		{
+			m_pRState[i]->Release();
+			m_pRState[i] = nullptr;
+		}
 	}
 }
 
 void Device::ReleaseDepthStencilState()
 {
-	if (m_pDSState != nullptr)
+	for (int i = 0; i < _DEPTHSTENCIL::DS_MAX; ++i)
 	{
-		m_pDSState->Release();
-		m_pDSState = nullptr;
+		if (m_pDSState[i] != nullptr)
+		{
+			m_pDSState[i]->Release();
+			m_pDSState[i] = nullptr;
+		}
 	}
 }
 
 void Device::ReleaseSamplerState()
 {
-	if (m_pSState != nullptr)
+	for (int i = 0; i < _SAMPLER::SS_MAX; ++i)
 	{
-		m_pSState->Release();
-		m_pSState = nullptr;
+		if (m_pSState[i] != nullptr)
+		{
+			m_pSState[i]->Release();
+			m_pSState[i] = nullptr;
+		}
 	}
 }
 
 void Device::ClearBackBuffer()
 {
-	XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);
+	//XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);
+	//XMFLOAT4 col = XMFLOAT4(1.0f, 0.8f, 1.0f, 1);
+	XMFLOAT4 col = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	m_pDXDC->ClearRenderTargetView(m_pRenderTarget, (float*)&col);
 	m_pDXDC->ClearDepthStencilView(m_pDSView, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -523,7 +595,6 @@ void Device::ClearBackBuffer()
 void Device::Update()
 {
 	CTIMER::Update();
-
 	m_vTime = XMFLOAT4
 	(
 		CTIMER::DeltaTime(),
@@ -531,31 +602,89 @@ void Device::Update()
 		CTIMER::Time(),
 		CTIMER::UnscaledTime()
 	);
-	
-	CINPUT::Update(m_vTime.x);
+
+	CINPUT::Update(m_vTime.y);
+
+	if (CINPUT::GetKeyPressed(DIK_EQUALS))
+		CTIMER::SpeedUp();
+	if (CINPUT::GetKeyPressed(DIK_MINUS))
+		CTIMER::SpeedDown();
 
 	g_pShader->SetTime(m_vTime);
 
 	//m_pCamera->Update();
 	m_pObj->Update(m_vTime.x);
+	m_pSphere->Update(m_vTime.x);
+
+	static bool bClick = false;
+
+	//if (CINPUT::GetLButtonDown())
+	if(!bClick)
+	{
+		iGameObject *tmp = new GameObject();
+		int mx = 0, my = 0;
+		CINPUT::GetMousePosition(mx, my);
+		XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
+		tmp->Init(vWorld);
+
+		m_pObjVector->push_back(tmp);
+
+		bClick = true;
+	}
+
+	for (iGameObject* Obj : *m_pObjVector)
+	{
+		int mx = 0, my = 0;
+		CINPUT::GetMousePosition(mx, my);
+		XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
+
+		((GameObject*)Obj)->SetPos(vWorld);
+		Obj->Update(m_vTime.x);
+	}
 }
 
 void Device::LateUpdate()
 {
-	m_pCamera->LateUpdate();
+	m_pCamera->LateUpdate(m_vTime.x);
 	m_pObj->LateUpdate(m_vTime.x);
+	m_pSphere->LateUpdate(m_vTime.x);
+
+	for (iGameObject* Obj : *m_pObjVector)
+	{
+		Obj->LateUpdate(m_vTime.x);
+	}
 }
 
 void Device::Render()
 {
 	m_pObj->Render();
+	//m_pSphere->Render();
+
+	for (iGameObject* Obj : *m_pObjVector)
+	{
+		Obj->Render();
+	}
+
 }
 
 void Device::PrintInfo()
 {
 	CFONT::Begin();
 
-	CFONT::PrintInfo(1, 1, XMFLOAT4(1, 1, 1, 1), L"ASDF");
+	int y = -13;
+	CFONT::PrintInfo(1, y+=14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Play Time : %.2f(s)", m_vTime.w);
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"%s", CINPUT::GetLButtonDown() ? L"True" : L"False");
+
+	int mx, my;
+	CINPUT::GetMousePosition(mx, my);
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(Screen) : (%d, %d)", mx, my);
+	XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 10.0f));
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f, %.2f)", vWorld.x, vWorld.y, vWorld.z);
+	//XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(800.0f, 450.0f, 0.0f));
+	//CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f)", vWorld.x, vWorld.y);
+	//vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(0.0f, 0.0f, 0.0f));
+	//CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f)", vWorld.x, vWorld.y);
 
 	CFONT::End();
 }
@@ -614,9 +743,11 @@ BOOL Device::LoadCamera()
 	BOOL res = TRUE;
 
 	m_pCamera = new Camera();
-	res = m_pCamera->Init(float(m_Mode.Width), float(m_Mode.Height), m_Mode.Width / float(m_Mode.Height));
+	res = m_pCamera->Init(float(m_Mode.Width), float(m_Mode.Height), XM_PIDIV4);
 	if (!res)
 		return FALSE;
+
+	g_pCamera = m_pCamera;
 
 	return TRUE;
 }
@@ -647,7 +778,10 @@ BOOL Device::LoadManager()
 	MeshCreator::Init(m_pDevice);
 
 	GeoLoader::Init();
-	GeoLoader::LoadGeometry(L"..\\model2.txt", L"cube");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model2.txt", L"cube");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model3.txt", L"sphere");
+
+	TextureLoader::Init(m_pDevice, m_pDXDC);
 
 	return res;
 }
@@ -658,6 +792,7 @@ void Device::ReleaseCamera()
 	{
 		delete m_pCamera;
 		m_pCamera = nullptr;
+		g_pCamera = nullptr;
 	}
 }
 
@@ -681,6 +816,7 @@ void Device::ReleaseAddOn()
 
 void Device::ReleaseManager()
 {
+	TextureLoader::Release();
 	GeoLoader::Release();
 	MeshCreator::Release();
 	BufferCreator::Release();

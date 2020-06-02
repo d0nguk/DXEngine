@@ -7,10 +7,16 @@ namespace ENGINEDLL
 	IDirectInput8* CINPUT::m_pInput = nullptr;
 	IDirectInputDevice8* CINPUT::m_pKeyboard = nullptr;
 	IDirectInputDevice8* CINPUT::m_pMouse = nullptr;
+
+	HWND CINPUT::m_hWnd;
 	unsigned char CINPUT::m_prevKeyState[256] = { 0x00, };
 	unsigned char CINPUT::m_keyState[256] = { 0x00, };
 	CINPUT::KEYSTATE CINPUT::m_curKeyState[256] = { CINPUT::KEYSTATE::RELEASED, };
+
+	unsigned char CINPUT::m_prevMouseState[4] = { 0x00, };
+	CINPUT::KEYSTATE CINPUT::m_curMouseState[4] = { CINPUT::KEYSTATE::RELEASED, };
 	DIMOUSESTATE CINPUT::m_mouseState;
+
 	int	CINPUT::m_iWidth = 0;
 	int	CINPUT::m_iHeight = 0;
 	int	CINPUT::m_iMouseX = 0;
@@ -20,6 +26,11 @@ namespace ENGINEDLL
 	HRESULT CINPUT::Init(HINSTANCE hInst, HWND hWnd, int width, int height)
 	{
 		HRESULT hr = S_OK;
+
+		m_iWidth = width;
+		m_iHeight = height;
+
+		m_hWnd = hWnd;
 
 		hr = DirectInput8Create
 		(
@@ -98,6 +109,8 @@ namespace ENGINEDLL
 	{
 		HRESULT hr = S_OK;
 
+		::memset(&m_mouseState, NULL, sizeof(DIMOUSESTATE));
+
 		hr = m_pInput->CreateDevice(GUID_SysMouse, &m_pMouse, NULL);
 		if (FAILED(hr))
 			return hr;
@@ -114,9 +127,11 @@ namespace ENGINEDLL
 		if (FAILED(hr))
 			return hr;
 
-		m_iMouseX = (int)(m_iWidth * 0.5f);
-		m_iMouseY = (int)(m_iHeight * 0.5f);
-		SetCursorPos((int)(m_iWidth * 0.5f), (int)(m_iHeight * 0.5f));
+		RECT rc;
+		GetWindowRect(m_hWnd, &rc);
+		m_iMouseX = (int)((rc.right - rc.left) * 0.5f + rc.left);
+		m_iMouseY = (int)((rc.bottom - rc.top) * 0.5f + rc.top);
+		SetCursorPos(m_iMouseX, m_iMouseY);
 
 		return hr;
 	}
@@ -191,6 +206,32 @@ namespace ENGINEDLL
 				return hr;
 		}
 
+		for (int i = 0; i < 4; ++i)
+		{
+			// Case 1 : Before : X // After : X
+			if (m_prevMouseState[i] == 0x00 && m_mouseState.rgbButtons[i] == 0x00)
+			{
+				m_curMouseState[i] = KEYSTATE::RELEASED;
+			}
+			// Case 2 : Before : X // After : O
+			else if (m_prevMouseState[i] == 0x00 && m_mouseState.rgbButtons[i] == 0x80)
+			{
+				m_curMouseState[i] = KEYSTATE::PRESSEDDOWN;
+			}
+			// Case 3 : Before : O // After : X
+			else if (m_prevMouseState[i] == 0x80 && m_mouseState.rgbButtons[i] == 0x00)
+			{
+				m_curMouseState[i] = KEYSTATE::PRESSEDUP;
+			}
+			// Case 4 : Before : O // After : O
+			else if (m_prevMouseState[i] == 0x80 && m_mouseState.rgbButtons[i] == 0x80)
+			{
+				m_curMouseState[i] = KEYSTATE::PRESSED;
+			}
+
+			m_prevMouseState[i] = m_mouseState.rgbButtons[i];
+		}
+
 		return hr;
 	}
 
@@ -201,13 +242,15 @@ namespace ENGINEDLL
 
 		if (m_iMouseX < 0)
 			m_iMouseX = 0;
-		else if (m_iMouseX > m_iWidth)
+		if (m_iMouseX > m_iWidth)
 			m_iMouseX = m_iWidth;
 
 		if (m_iMouseY < 0)
 			m_iMouseY = 0;
-		else if (m_iMouseY > m_iHeight)
+		if (m_iMouseY > m_iHeight)
 			m_iMouseY = m_iHeight;
+
+		//SetCursorPos(m_iMouseX, m_iMouseY);
 	}
 
 	bool CINPUT::GetKeyPressed(UINT key)
@@ -223,5 +266,49 @@ namespace ENGINEDLL
 	bool CINPUT::GetKeyPressedUp(UINT key)
 	{
 		return m_curKeyState[key] == KEYSTATE::PRESSEDUP;
+	}
+
+	bool CINPUT::GetLButtonDown()
+	{
+		if (m_curMouseState[0] == KEYSTATE::PRESSED)
+			return true;
+
+		return false;
+	}
+
+	bool CINPUT::GetRButtonDown()
+	{
+		if (m_curMouseState[1] == KEYSTATE::PRESSEDDOWN)
+			return true;
+
+		return false;
+	}
+
+	void CINPUT::GetMousePosition(int & x, int & y)
+	{
+		RECT window;// , client;
+		GetWindowRect(m_hWnd, &window);
+
+		POINT p;
+		GetCursorPos(&p);
+
+		x = p.x - window.left;
+		y = p.y - window.top;
+
+		if (x < 0)
+			x = 0;
+		else if (x > m_iWidth)
+			x = m_iWidth;
+
+		if (y < 0)
+			y = 0;
+		else if (y > m_iHeight)
+			y = m_iHeight;
+	}
+
+	void CINPUT::GetRect(RECT & rect)
+	{
+		//GetClientRect(m_hWnd, &rect);
+		GetWindowRect(m_hWnd, &rect);
 	}
 }

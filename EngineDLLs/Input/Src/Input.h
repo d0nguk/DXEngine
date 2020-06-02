@@ -50,14 +50,24 @@ namespace ENGINEDLL
 		static bool GetKeyPressedDown(UINT key);
 		static bool GetKeyPressedUp(UINT key);
 
+		static bool GetLButtonDown();
+		static bool GetRButtonDown();
+		static void GetMousePosition(int & x, int & y);
+		static void GetRect(RECT & rect);
+
 	private:
 		static IDirectInput8*		m_pInput;
 		static IDirectInputDevice8*	m_pKeyboard;
 		static IDirectInputDevice8*	m_pMouse;
 
+		static HWND					m_hWnd;
+
 		static unsigned char		m_prevKeyState[256];	// Prev Frame Key State
 		static unsigned char		m_keyState[256];		// Current Frame Key State
 		static KEYSTATE				m_curKeyState[256];		// For Check KeyState
+		
+		static unsigned char		m_prevMouseState[4];	// Prev Frame Key State
+		static KEYSTATE				m_curMouseState[4];	// For Check KeyState
 		static DIMOUSESTATE			m_mouseState;
 
 		static int					m_iWidth;

@@ -4,8 +4,11 @@
 #include "dx.h"
 #include "dlls.h"
 #include "Shader.h"
-#include "GameObject.h"
 #include "Camera.h"
+
+#include "Character.h"
+
+#include <vector>
 
 class Device
 {
@@ -75,6 +78,29 @@ private:
 private:
 	static Device* pDevice;
 
+public:
+	typedef enum tagRasterizerState
+	{
+		RS_SOLID_BACK,
+		RS_WIREFRAME_NONE,
+
+		RS_MAX
+	} _RASTER;
+	typedef enum tagDepthStencilState
+	{
+		DS_WRITE_ON_TEST_ON,
+		DS_WRITE_ON_TEST_OFF,
+
+		DS_MAX
+	} _DEPTHSTENCIL;
+	typedef enum tagSamplerState
+	{
+		SS_CLAMP,
+		SS_REPEAT,
+
+		SS_MAX
+	} _SAMPLER;
+
 private:
 	ID3D11Device				*m_pDevice;
 	ID3D11DeviceContext			*m_pDXDC;
@@ -83,13 +109,16 @@ private:
 	ID3D11Texture2D				*m_pDS;
 	ID3D11DepthStencilView		*m_pDSView;
 
-	ID3D11RasterizerState		*m_pRState;
-	ID3D11DepthStencilState		*m_pDSState;
-	ID3D11SamplerState			*m_pSState;
+	ID3D11RasterizerState		*m_pRState[RS_MAX];
+	ID3D11DepthStencilState		*m_pDSState[DS_MAX];
+	ID3D11SamplerState			*m_pSState[SS_MAX];
 
 	DXGI_MODE_DESC				m_Mode;
 
 	D3D_FEATURE_LEVEL			m_FeatureLevel;
+
+	UINT						m_iAA;
+	UINT						m_iAF;
 #pragma endregion
 
 #pragma region DATA
@@ -110,8 +139,11 @@ private:
 private:
 	XMFLOAT4		m_vTime;
 
+	std::vector<iGameObject*> *m_pObjVector;
+
 	Camera			*m_pCamera;
 	Shader			*m_pShader;
 	iGameObject		*m_pObj;
+	iGameObject		*m_pSphere;
 #pragma endregion
 };

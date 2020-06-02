@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\Src\BufferCreator.cpp" />
     <ClCompile Include="..\Src\Camera.cpp" />
+    <ClCompile Include="..\Src\Character.cpp" />
     <ClCompile Include="..\Src\Device.cpp" />
     <ClCompile Include="..\Src\GameObject.cpp" />
     <ClCompile Include="..\Src\GeoLoader.cpp" />
@@ -28,6 +29,7 @@
     <ClCompile Include="..\Src\MeshCreator.cpp" />
     <ClCompile Include="..\Src\MeshRenderer.cpp" />
     <ClCompile Include="..\Src\Shader.cpp" />
+    <ClCompile Include="..\Src\TextureLoader.cpp" />
     <ClCompile Include="..\Src\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +37,7 @@
     <ClInclude Include="..\Src\BufferData.h" />
     <ClInclude Include="..\Src\Camera.h" />
     <ClInclude Include="..\Src\cbMatrix.h" />
+    <ClInclude Include="..\Src\Character.h" />
     <ClInclude Include="..\Src\Device.h" />
     <ClInclude Include="..\Src\dlls.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -48,11 +51,13 @@
     <ClInclude Include="..\Src\Geometries.h" />
     <ClInclude Include="..\Src\iComponent.h" />
     <ClInclude Include="..\Src\iGameObject.h" />
+    <ClInclude Include="..\Src\Material.h" />
     <ClInclude Include="..\Src\MeshCreator.h" />
     <ClInclude Include="..\Src\MeshData.h" />
     <ClInclude Include="..\Src\MeshRenderer.h" />
     <ClInclude Include="..\Src\Shader.h" />
     <ClInclude Include="..\Src\stdafx.h" />
+    <ClInclude Include="..\Src\TextureLoader.h" />
     <ClInclude Include="..\Src\Transform.h" />
     <ClInclude Include="..\Src\Vertices.h" />
   </ItemGroup>
@@ -169,7 +174,7 @@ copy /y "..\..\Extern\Custom\Lib\Timer.dll" "$(OutDir)"</Command>
       <AdditionalIncludeDirectories>..\..\Extern\Inc;..\..\Extern\Custom\Inc;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\Extern\Lib;..\..\Extern\Custom\Lib;</AdditionalLibraryDirectories>
