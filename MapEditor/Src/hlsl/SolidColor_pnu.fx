@@ -91,5 +91,5 @@ float4 PS_Main
 
 	float4 diff = Tex.Sample(_sampler, uv);//float2(uv.x * 3.0f + _Time.Time.z, uv.y * 3.0f));
 
-	return D * diff;
+	return diff;
 }

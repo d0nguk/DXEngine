@@ -148,10 +148,38 @@ void Camera::CreateProjMatrix()
 
 XMFLOAT3 Camera::ScreenToWorldPoint(XMFLOAT3 _vScreen)
 {
+	XMFLOAT3 res;
+
+	switch (m_View)
+	{
+	case VIEW2D:
+		res = ScreenToWorldPoint2D(_vScreen);
+		break;
+
+	case VIEW3D:
+		res = ScreenToWorldPoint3D(_vScreen);
+		break;
+	}
+
+	return res;
+}
+
+XMFLOAT3 Camera::ScreenToWorldPoint2D(XMFLOAT3 _vScreen)
+{
+	XMFLOAT3 fWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	fWorld.x = _vScreen.x - (m_fWidth * 0.5f);
+	fWorld.y = _vScreen.y - (m_fHeight * 0.5f);
+	fWorld.y = -fWorld.y;
+
+	return fWorld;
+}
+
+XMFLOAT3 Camera::ScreenToWorldPoint3D(XMFLOAT3 _vScreen)
+{
 	XMFLOAT3 fWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMVECTOR vScreen = XMVectorZero();
 
-	vScreen = XMVectorSetX(vScreen,  ((_vScreen.x / m_fWidth) - 0.5f) * 2.0f); // Convert To -1 <= x <= 1
+	vScreen = XMVectorSetX(vScreen, ((_vScreen.x / m_fWidth) - 0.5f) * 2.0f); // Convert To -1 <= x <= 1
 	vScreen = XMVectorSetY(vScreen, -((_vScreen.y / m_fHeight) - 0.5f) * 2.0f); // Convert To -1 <= y <= 1
 	vScreen = XMVectorSetZ(vScreen, 1.0f);
 
@@ -159,7 +187,7 @@ XMFLOAT3 Camera::ScreenToWorldPoint(XMFLOAT3 _vScreen)
 	vScreen = XMVector3TransformCoord(vScreen, InverseProj);
 	//vScreen = XMVectorSetX(vScreen, XMVectorGetX(vScreen) / m_mProj._11);
 	//vScreen = XMVectorSetY(vScreen, XMVectorGetY(vScreen) / m_mProj._22);
-	
+
 	XMMATRIX InverseView = XMMatrixInverse(NULL, XMLoadFloat4x4(&m_mView));
 	vScreen = XMVector3TransformCoord(vScreen, InverseView);
 	XMStoreFloat3(&fWorld, vScreen);
@@ -169,8 +197,8 @@ XMFLOAT3 Camera::ScreenToWorldPoint(XMFLOAT3 _vScreen)
 
 	XMStoreFloat3(&fWorld, dir);
 	fWorld.x = m_vEye.x + fWorld.x * len;
-	fWorld.y = m_fViewY;// m_vEye.y + fWorld.y * len;
+	fWorld.y = m_vEye.y + fWorld.y * len;
 	fWorld.z = m_vEye.z + fWorld.z * len;
-	
+
 	return fWorld;
 }

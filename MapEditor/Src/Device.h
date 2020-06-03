@@ -7,8 +7,18 @@
 #include "Camera.h"
 
 #include "Character.h"
+#include "Quad.h"
 
 #include <vector>
+
+enum RENDERMODE
+{
+	EDITMAP = 0,
+	SELECTTEX = 1 << 0,
+	ROTATECAM = 1 << 1,
+
+	MODE_MAX = 3
+};
 
 class Device
 {
@@ -140,9 +150,15 @@ private:
 	XMFLOAT4		m_vTime;
 
 	std::vector<iGameObject*> *m_pObjVector;
+	std::vector<Quad*> *m_pTexList;
 	iGameObject	*m_pCursor;
 
 	Camera			*m_pCamera;
 	Shader			*m_pShader;
+
+	RENDERMODE		m_renderMode;
+	UINT			m_texIndex;
 #pragma endregion
 };
+
+extern std::vector<const TCHAR*> texname;

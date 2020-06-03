@@ -35,6 +35,13 @@ private:
 
 public:
 	XMFLOAT3 ScreenToWorldPoint(XMFLOAT3 _vScreen);
+private:
+	XMFLOAT3 ScreenToWorldPoint2D(XMFLOAT3 _vScreen);
+	XMFLOAT3 ScreenToWorldPoint3D(XMFLOAT3 _vScreen);
+
+public:
+	void Set2D() { m_View = tagVIEW::VIEW2D; LateUpdate(0.0f); }
+	void Set3D() { m_View = tagVIEW::VIEW3D; LateUpdate(0.0f); }
 
 private:
 	XMFLOAT4X4 m_mView, m_mProj;

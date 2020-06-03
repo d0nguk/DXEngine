@@ -268,17 +268,25 @@ namespace ENGINEDLL
 		return m_curKeyState[key] == KEYSTATE::PRESSEDUP;
 	}
 
-	bool CINPUT::GetLButtonDown()
+	bool CINPUT::GetMouseButton(int button)
 	{
-		if (m_curMouseState[0] == KEYSTATE::PRESSED)
+		if (m_curMouseState[button] == KEYSTATE::PRESSED)
 			return true;
 
 		return false;
 	}
 
-	bool CINPUT::GetRButtonDown()
+	bool CINPUT::GetMouseButtonDown(int button)
 	{
-		if (m_curMouseState[1] == KEYSTATE::PRESSEDDOWN)
+		if (m_curMouseState[button] == KEYSTATE::PRESSEDDOWN)
+			return true;
+
+		return false;
+	}
+
+	bool CINPUT::GetMouseButtonUp(int button)
+	{
+		if (m_curMouseState[button] == KEYSTATE::PRESSEDUP)
 			return true;
 
 		return false;

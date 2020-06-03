@@ -5,7 +5,11 @@
 #include "GeoLoader.h"
 #include "TextureLoader.h"
 
+#include <filesystem>
+
 Device* Device::pDevice = nullptr;
+
+std::vector<const TCHAR*> texname;
 
 LRESULT CALLBACK gMsgProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -26,6 +30,9 @@ Device::Device(HINSTANCE hInst)
 
 	m_iAF = 4;
 	m_iAA = 4;
+
+	m_renderMode = RENDERMODE::EDITMAP;
+	m_texIndex = 0;
 }
 
 Device::~Device()
@@ -51,11 +58,6 @@ BOOL Device::Init()
 		res = LoadData();
 		if (!res)
 			return res;
-
-		m_pObjVector = new std::vector<iGameObject*>();
-
-		m_pCursor = new GameObject();
-		m_pCursor->Init();
 	}
 
 	return res;
@@ -71,6 +73,13 @@ BOOL Device::Run()
 
 void Device::Release()
 {
+	auto i = texname.begin();
+	for (; i != texname.end(); ++i)
+	{
+		delete (*i);
+		*i = nullptr;
+	}
+
 	if (m_pCursor != nullptr)
 	{
 		delete m_pCursor;
@@ -95,6 +104,26 @@ void Device::Release()
 		m_pObjVector->clear();
 		delete m_pObjVector;
 		m_pObjVector = nullptr;
+	}
+	if (m_pTexList != nullptr)
+	{
+		if (m_pTexList->size() > 0)
+		{
+			auto iter = m_pTexList->begin();
+
+			for (; iter != m_pTexList->end(); ++iter)
+			{
+				if (*iter != nullptr)
+				{
+					delete (*iter);
+					(*iter) = nullptr;
+				}
+			}
+		}
+
+		m_pTexList->clear();
+		delete m_pTexList;
+		m_pTexList = nullptr;
 	}
 
 	ReleaseData();
@@ -608,92 +637,146 @@ void Device::Update()
 
 	//m_pCamera->Update();
 
+	if (CINPUT::GetKeyPressedDown(DIK_TAB))
+		m_renderMode = (RENDERMODE)(m_renderMode ^ RENDERMODE::SELECTTEX);
+	else
+	{
+		if (CINPUT::GetKeyPressed(DIK_LALT))
+			m_renderMode = RENDERMODE(m_renderMode | RENDERMODE::ROTATECAM);
+		else if (CINPUT::GetKeyPressedUp(DIK_LALT))
+			m_renderMode = RENDERMODE(m_renderMode & !(RENDERMODE::ROTATECAM));
+	}
+
 	int mx = 0, my = 0;
 	CINPUT::GetMousePosition(mx, my);
-	XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
-	vWorld.x = roundf(vWorld.x);
-	vWorld.z = roundf(vWorld.z);
-	((GameObject*)m_pCursor)->SetPos(vWorld);
+	XMFLOAT3 vWorld = XMFLOAT3(0, 0, 0);
 
-	if(CINPUT::GetLButtonDown())
+	switch (m_renderMode)
 	{
-		XMVECTOR vL = XMLoadFloat3(&vWorld);
-		XMVECTOR vR = XMVectorZero();
+	case RENDERMODE::EDITMAP:
+		#pragma region EDITMAP
+		g_pCamera->Set3D();
+		vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
+		vWorld.x = roundf(vWorld.x);
+		vWorld.z = roundf(vWorld.z);
+		((GameObject*)m_pCursor)->SetPos(vWorld);
 
-		auto iter = m_pObjVector->begin();
-
-		for (; iter != m_pObjVector->end(); ++iter)
+		if (CINPUT::GetMouseButton(0))
 		{
-			GameObject* pObj = (GameObject*)*iter;
+			XMVECTOR vL = XMLoadFloat3(&vWorld);
+			XMVECTOR vR = XMVectorZero();
 
-			vR = XMLoadFloat3(&pObj->GetPos());
+			auto iter = m_pObjVector->begin();
 
-			if (XMVector3Equal(vL, vR))
-				break;
-		}
-
-		if (iter == m_pObjVector->end())
-		{
-			iGameObject *tmp = new GameObject();
-			tmp->Init(vWorld);
-
-			m_pObjVector->push_back(tmp);
-		}
-	}
-
-	if (CINPUT::GetRButtonDown())
-	{
-		XMVECTOR vL = XMLoadFloat3(&vWorld);
-		XMVECTOR vR = XMVectorZero();
-
-		auto iter = m_pObjVector->begin();
-
-		for (; iter != m_pObjVector->end(); ++iter)
-		{
-			GameObject* pObj = (GameObject*)*iter;
-
-			vR = XMLoadFloat3(&pObj->GetPos());
-
-			if (XMVector3Equal(vL, vR))
+			for (; iter != m_pObjVector->end(); ++iter)
 			{
-				iGameObject *tmp = *iter;
-				m_pObjVector->erase(iter);
-				delete tmp;
-				tmp = nullptr;
+				GameObject* pObj = (GameObject*)*iter;
 
-				break;
+				vR = XMLoadFloat3(&pObj->GetPos());
+
+				if (XMVector3Equal(vL, vR))
+					break;
+			}
+
+			if (iter == m_pObjVector->end())
+			{
+				iGameObject *tmp = new GameObject();
+				tmp->Init(vWorld);
+				((GameObject*)tmp)->SetTexture(texname[m_texIndex]);
+
+				m_pObjVector->push_back(tmp);
 			}
 		}
-	}
 
-	if (CINPUT::GetKeyPressed(DIK_LCONTROL))
-	{
-		if (CINPUT::GetKeyPressedDown(DIK_Z))
+		if (CINPUT::GetMouseButton(1))
 		{
-			if (m_pObjVector->size() > 0)
+			XMVECTOR vL = XMLoadFloat3(&vWorld);
+			XMVECTOR vR = XMVectorZero();
+
+			auto iter = m_pObjVector->begin();
+
+			for (; iter != m_pObjVector->end(); ++iter)
 			{
-				iGameObject* tmp = m_pObjVector->operator[](m_pObjVector->size() - 1);
-				m_pObjVector->pop_back();
-				delete tmp;
-				tmp = nullptr;
+				GameObject* pObj = (GameObject*)*iter;
+
+				vR = XMLoadFloat3(&pObj->GetPos());
+
+				if (XMVector3Equal(vL, vR))
+				{
+					iGameObject *tmp = *iter;
+					m_pObjVector->erase(iter);
+					delete tmp;
+					tmp = nullptr;
+
+					break;
+				}
 			}
 		}
+
+		if (CINPUT::GetKeyPressed(DIK_LCONTROL))
+		{
+			if (CINPUT::GetKeyPressedDown(DIK_Z))
+			{
+				if (m_pObjVector->size() > 0)
+				{
+					iGameObject* tmp = m_pObjVector->operator[](m_pObjVector->size() - 1);
+					m_pObjVector->pop_back();
+					delete tmp;
+					tmp = nullptr;
+				}
+			}
+		}
+		#pragma endregion
+		break;
+
+	case RENDERMODE::SELECTTEX:
+		#pragma region SELECTTEX
+		g_pCamera->Set2D();
+		vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
+
+		if (CINPUT::GetMouseButtonDown(0))
+		{
+			for (int i = 0; i < texname.size(); ++i)
+			{
+				if (m_pTexList->operator[](i)->CheckBoundary(vWorld))
+				{
+					m_texIndex = i;
+					break;
+				}
+			}
+		}
+
+		#pragma endregion
+		break;
+
+	case RENDERMODE::ROTATECAM:
+		break;
 	}
 
+	((GameObject*)m_pCursor)->SetTexture(texname[m_texIndex]);
 	m_pCursor->Update(m_vTime.x);
 	for (iGameObject* Obj : *m_pObjVector)
 	{
-		//((GameObject*)Obj)->SetPos(vWorld);
+		Obj->Update(m_vTime.x);
+	}
+
+	for (Quad* Obj : *m_pTexList)
+	{
 		Obj->Update(m_vTime.x);
 	}
 }
 
 void Device::LateUpdate()
-{
-	m_pCamera->LateUpdate(m_vTime.x);
-
+{	
+	g_pCamera->Set3D();
 	m_pCursor->LateUpdate(m_vTime.x);
 	for (iGameObject* Obj : *m_pObjVector)
+	{
+		Obj->LateUpdate(m_vTime.x);
+	}
+
+	g_pCamera->Set2D();
+	for (Quad* Obj : *m_pTexList)
 	{
 		Obj->LateUpdate(m_vTime.x);
 	}
@@ -701,11 +784,21 @@ void Device::LateUpdate()
 
 void Device::Render()
 {
+	g_pCamera->Set3D();
+	
 	m_pCursor->Render();
-
 	for (iGameObject* Obj : *m_pObjVector)
 	{
 		Obj->Render();
+	}
+
+	if ((m_renderMode & RENDERMODE::SELECTTEX) == RENDERMODE::SELECTTEX)
+	{
+		g_pCamera->Set2D();
+		for (Quad* Obj : *m_pTexList)
+		{
+			Obj->Render();
+		}
 	}
 }
 
@@ -714,10 +807,16 @@ void Device::PrintInfo()
 	CFONT::Begin();
 
 	int y = -13;
-	CFONT::PrintInfo(1, y+=14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
 	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Play Time : %.2f(s)", m_vTime.w);
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"%s", CINPUT::GetLButtonDown() ? L"True" : L"False");
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"%d", m_pObjVector->size());
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Object Count : %d", m_pObjVector->size());
+
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Render Mode : %s",
+		m_renderMode == RENDERMODE::EDITMAP ? L"Edit Map" :
+		(m_renderMode == RENDERMODE::SELECTTEX ? L"Select Texture" : L"Rotate Cam")
+	);
+
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Texture Index : %d", m_texIndex);
 
 	CFONT::End();
 }
@@ -730,6 +829,12 @@ void Device::Flip()
 BOOL Device::LoadData()
 {
 	BOOL res = TRUE;
+
+	m_pObjVector = new std::vector<iGameObject*>();
+	m_pObjVector->clear();
+
+	m_pTexList = new std::vector<Quad*>();
+	m_pTexList->clear();
 
 	if (FAILED(LoadShader()))
 		return FALSE;
@@ -745,6 +850,9 @@ BOOL Device::LoadData()
 	res = LoadManager();
 	if (!res)
 		return res;
+
+	m_pCursor = new GameObject();
+	m_pCursor->Init();
 
 	return res;
 }
@@ -811,10 +919,48 @@ BOOL Device::LoadManager()
 	MeshCreator::Init(m_pDevice);
 
 	GeoLoader::Init();
-	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model2.txt", L"cube");
-	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model3.txt", L"sphere");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\cube.txt", L"cube");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\sphere.txt", L"sphere");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\quad.txt", L"quad");
 
 	TextureLoader::Init(m_pDevice, m_pDXDC);
+	TEXTURE* pTex = nullptr;
+	Quad* pQuad = nullptr;
+	texname.clear();
+
+	namespace fs = std::experimental::filesystem;
+	fs::path _path = "..\\Data\\Textures\\";
+	if (!fs::is_directory(_path))
+		return FALSE;
+
+	std::string filename = "";
+
+	for (const auto& entry : fs::directory_iterator{ _path })
+	{
+		if (fs::is_regular_file(entry.status()))
+		{
+			filename = entry.path().string();
+
+			wchar_t* pStr;
+			int strSize = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, NULL, NULL);
+			pStr = new WCHAR[strSize];
+			MultiByteToWideChar(CP_ACP, 0, filename.c_str(), strlen(filename.c_str()) + 1, pStr, strSize);
+
+			texname.push_back(pStr);
+		}
+	}
+
+	for (int i = 0; i < texname.size(); ++i)
+	{
+		pTex = TextureLoader::GetTexture(texname[i]);
+		pQuad = new Quad();
+		pQuad->Init();
+		pQuad->SetTexture(texname[i]);
+
+		m_pTexList->push_back(pQuad);
+
+		m_pTexList->operator[](i)->SetPos(XMFLOAT3(m_Mode.Width * 0.5f - 100, m_Mode.Height * 0.5f - 100 - (i * 175), 0));
+	}
 
 	return res;
 }

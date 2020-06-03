@@ -28,6 +28,7 @@
     <ClCompile Include="..\Src\main.cpp" />
     <ClCompile Include="..\Src\MeshCreator.cpp" />
     <ClCompile Include="..\Src\MeshRenderer.cpp" />
+    <ClCompile Include="..\Src\Quad.cpp" />
     <ClCompile Include="..\Src\Shader.cpp" />
     <ClCompile Include="..\Src\TextureLoader.cpp" />
     <ClCompile Include="..\Src\Transform.cpp" />
@@ -55,6 +56,7 @@
     <ClInclude Include="..\Src\MeshCreator.h" />
     <ClInclude Include="..\Src\MeshData.h" />
     <ClInclude Include="..\Src\MeshRenderer.h" />
+    <ClInclude Include="..\Src\Quad.h" />
     <ClInclude Include="..\Src\Shader.h" />
     <ClInclude Include="..\Src\stdafx.h" />
     <ClInclude Include="..\Src\TextureLoader.h" />

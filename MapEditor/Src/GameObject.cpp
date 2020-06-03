@@ -32,7 +32,7 @@ BOOL GameObject::Init(XMFLOAT3 vPos)
 	m_pMeshRenderer = new MeshRenderer();
 	m_pMeshRenderer->SetShader(g_pShader);
 	m_pMeshRenderer->SetMesh(pMesh);
-	m_pMeshRenderer->SetTexture(L"..\\Data\\Textures\\drock.jpg");
+	m_pMeshRenderer->SetTexture(texname[0]);
 
 	return TRUE;
 }

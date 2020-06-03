@@ -50,8 +50,9 @@ namespace ENGINEDLL
 		static bool GetKeyPressedDown(UINT key);
 		static bool GetKeyPressedUp(UINT key);
 
-		static bool GetLButtonDown();
-		static bool GetRButtonDown();
+		static bool GetMouseButton(int button);
+		static bool GetMouseButtonDown(int button);
+		static bool GetMouseButtonUp(int button);
 		static void GetMousePosition(int & x, int & y);
 		static void GetRect(RECT & rect);
 

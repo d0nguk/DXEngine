@@ -70,6 +70,9 @@
     <Filter Include="GameObject\ObjectManagement\004_TextureLoader">
       <UniqueIdentifier>{e2cf7e72-9ab5-4061-b66c-c14e4f33b0d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GameObject\Objects\004_Quad">
+      <UniqueIdentifier>{022b57e1-c188-44e7-bb0d-79b8c0ad56c6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Device.cpp">
@@ -107,6 +110,9 @@
     </ClCompile>
     <ClCompile Include="..\Src\TextureLoader.cpp">
       <Filter>GameObject\ObjectManagement\004_TextureLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Quad.cpp">
+      <Filter>GameObject\Objects\004_Quad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="..\Src\TextureLoader.h">
       <Filter>GameObject\ObjectManagement\004_TextureLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Quad.h">
+      <Filter>GameObject\Objects\004_Quad</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -30,6 +30,10 @@ public:
 	{
 		return m_pTransform->Position;
 	}
+	void SetTexture(const TCHAR * filename)
+	{
+		m_pMeshRenderer->SetTexture(filename);
+	}
 
 protected:
 	Transform *m_pTransform;
