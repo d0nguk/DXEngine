@@ -70,6 +70,15 @@
     <Filter Include="GameObject\ObjectManagement\004_TextureLoader">
       <UniqueIdentifier>{e2cf7e72-9ab5-4061-b66c-c14e4f33b0d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\ShaderClass">
+      <UniqueIdentifier>{a1731b77-d824-4965-a7e0-108ffaac09a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\ShaderClass\000_Default">
+      <UniqueIdentifier>{6d10eb83-7544-44c7-b6ef-b2886d738cde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameObject\Objects\004_Quad">
+      <UniqueIdentifier>{c7555b3e-b9e5-4e61-a207-b14dead4e6ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Src\Device.cpp">
@@ -83,9 +92,6 @@
     </ClCompile>
     <ClCompile Include="..\Src\Transform.cpp">
       <Filter>GameObject\Components\002_Transform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Src\Shader.cpp">
-      <Filter>Shader</Filter>
     </ClCompile>
     <ClCompile Include="..\Src\Camera.cpp">
       <Filter>Device\002_Camera</Filter>
@@ -107,6 +113,12 @@
     </ClCompile>
     <ClCompile Include="..\Src\TextureLoader.cpp">
       <Filter>GameObject\ObjectManagement\004_TextureLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Shader.cpp">
+      <Filter>Shader\ShaderClass\000_Default</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Src\Quad.cpp">
+      <Filter>GameObject\Objects\004_Quad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -134,14 +146,8 @@
     <ClInclude Include="..\Src\iComponent.h">
       <Filter>GameObject\Components\001_Interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Shader.h">
-      <Filter>Shader</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\Camera.h">
       <Filter>Device\002_Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Src\cbMatrix.h">
-      <Filter>Shader\CBuffers</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\MeshRenderer.h">
       <Filter>GameObject\Components\003_MeshRenderer</Filter>
@@ -176,12 +182,27 @@
     <ClInclude Include="..\Src\TextureLoader.h">
       <Filter>GameObject\ObjectManagement\004_TextureLoader</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\Shader.h">
+      <Filter>Shader\ShaderClass\000_Default</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\cbBuffers.h">
+      <Filter>Shader\CBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\Quad.h">
+      <Filter>GameObject\Objects\004_Quad</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Src\hlsl\SolidColor.fx">
+    <FxCompile Include="..\Src\hlsl\Character.fx">
       <Filter>Shader\fx</Filter>
     </FxCompile>
-    <FxCompile Include="..\Src\hlsl\SolidColor_pnu.fx">
+    <FxCompile Include="..\Src\hlsl\Color.fx">
+      <Filter>Shader\fx</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\Terrain.fx">
+      <Filter>Shader\fx</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\Error.fx">
       <Filter>Shader\fx</Filter>
     </FxCompile>
   </ItemGroup>

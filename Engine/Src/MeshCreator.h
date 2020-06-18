@@ -16,7 +16,7 @@ private:
 public:
 	static void Init(ID3D11Device* pDevice);
 	static void Release();
-	static BOOL CreateMesh(const TCHAR* tag, Geometries * pGeo, BufferData * pBuff);
+	static BOOL CreateMesh(const TCHAR* tag, Geometries * pGeo, BufferData * pBuff, UINT count = 1);
 	static MeshData* LoadMesh(const TCHAR* tag);
 
 private:

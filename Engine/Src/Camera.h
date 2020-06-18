@@ -29,6 +29,9 @@ public:
 	void SetTarget(Transform * pTransform) { m_pTarget = pTransform; }
 	void Release();
 
+public:
+	void SetMatrix();
+
 private:
 	void CreateViewMatrix();
 	void CreateProjMatrix();

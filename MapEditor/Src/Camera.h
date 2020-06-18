@@ -42,6 +42,7 @@ private:
 public:
 	void Set2D() { m_View = tagVIEW::VIEW2D; LateUpdate(0.0f); }
 	void Set3D() { m_View = tagVIEW::VIEW3D; LateUpdate(0.0f); }
+	float m_fViewY;
 
 private:
 	XMFLOAT4X4 m_mView, m_mProj;
@@ -55,7 +56,6 @@ private:
 	float m_fZNear, m_fZFar;
 
 	float m_fOffsetX, m_fOffsetY, m_fOffsetZ;
-	float m_fViewY;
 
 	tagVIEW m_View;
 };

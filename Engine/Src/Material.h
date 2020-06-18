@@ -3,6 +3,8 @@
 #include "dx.h"
 #include "Shader.h"
 
+#include <vector>
+
 struct TEXTURE
 {
 	ID3D11ShaderResourceView* pTex;
@@ -20,6 +22,34 @@ struct TEXTURE
 
 struct Material
 {
-	TEXTURE *pTex;
 	Shader	*pShader;
+	std::vector<TEXTURE*> *pTex;
+
+	//XMFLOAT4 vDiffuse;
+	//XMFLOAT4 vAmbient;
+	//XMFLOAT4 vSpecular;
+
+	XMFLOAT4 vDiffuse;
+	XMFLOAT4 vAmbient;
+	XMFLOAT4 vSpecular;
+
+	Material()
+	{
+		pTex = new std::vector<TEXTURE*>();
+		pTex->clear();
+	}
+
+	~Material()
+	{
+		pShader = nullptr;
+		
+		auto iter = pTex->begin();
+		for (; iter != pTex->end(); ++iter)
+		{
+			*iter = nullptr;
+		}
+		pTex->clear();
+		delete pTex;
+		pTex = nullptr;
+	}
 };

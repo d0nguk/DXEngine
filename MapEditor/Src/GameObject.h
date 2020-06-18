@@ -33,9 +33,15 @@ public:
 	void SetTexture(const TCHAR * filename)
 	{
 		m_pMeshRenderer->SetTexture(filename);
+		m_wTexname = filename;
+	}
+	const TCHAR* GetTextureName()
+	{
+		return m_wTexname;
 	}
 
 protected:
 	Transform *m_pTransform;
 	MeshRenderer *m_pMeshRenderer;
+	const TCHAR* m_wTexname;
 };

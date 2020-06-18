@@ -6,11 +6,13 @@ struct BufferData
 {
 	ID3D11Buffer* m_pVertices;
 	ID3D11Buffer* m_pIndices;
+	bool m_bNext;
 
 	BufferData()
 	{
 		m_pVertices = nullptr;
 		m_pIndices = nullptr;
+		m_bNext = false;
 	}
 	~BufferData()
 	{

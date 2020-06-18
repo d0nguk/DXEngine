@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include "Device.h"
+#include "Material.h"
 #include <stdio.h>
 
 #pragma region LAYOUTS
@@ -64,7 +65,9 @@ LAYOUTS g_Layout[_LAYOUT::LAYOUT_MAX] =
 
 #pragma endregion
 
-Shader* g_pShader = nullptr;
+Shader * Shader::g_pCurrent = nullptr;
+Shader * Shader::g_pError = nullptr;
+Shader * Shader::g_pShaders[_SHADER::SHADER_MAX] = { nullptr, };
 
 Shader::Shader()
 {
@@ -74,6 +77,8 @@ Shader::Shader()
 	m_pVSCode = nullptr;
 
 	m_pLayout = nullptr;
+
+	m_bInit = false;
 }
 
 Shader::~Shader()
@@ -88,6 +93,7 @@ HRESULT Shader::Create(const TCHAR * filename, _LAYOUT layout)
 	hr = LoadShader(filename, layout);
 	if (FAILED(hr))
 		return hr;
+
 	hr = CreateInputLayout(layout);
 	if (FAILED(hr))
 		return hr;
@@ -96,12 +102,17 @@ HRESULT Shader::Create(const TCHAR * filename, _LAYOUT layout)
 	if (FAILED(hr))
 		return hr;
 
+	m_bInit = true;
+
 	return hr;
 }
 
 void Shader::Update()
 {
+	ID3D11DeviceContext* pDXDC = Device::GetDXDC();
 
+	pDXDC->VSSetConstantBuffers(2, 1, &m_pCBMaterial);
+	pDXDC->PSSetConstantBuffers(2, 1, &m_pCBMaterial);
 }
 
 void Shader::Release()
@@ -132,14 +143,24 @@ void Shader::Release()
 
 void Shader::SetShader()
 {
+	if (g_pCurrent == this)
+		return;
+
 	ID3D11DeviceContext* pDXDC = Device::GetDXDC();
+
+	g_pCurrent = this;
+	
+	g_pCamera->SetMatrix();
 
 	pDXDC->VSSetShader(m_pVS, nullptr, 0);
 	pDXDC->PSSetShader(m_pPS, nullptr, 0);
 
-	pDXDC->VSSetConstantBuffers(0, 1, &m_pCBMatrix);
-	pDXDC->PSSetConstantBuffers(0, 1, &m_pCBMatrix);
-	pDXDC->PSSetConstantBuffers(1, 1, &m_pCBTime);
+	pDXDC->VSSetConstantBuffers(0, 1, &m_pCBShared);
+	pDXDC->PSSetConstantBuffers(0, 1, &m_pCBShared);
+	pDXDC->VSSetConstantBuffers(1, 1, &m_pCBDirecional);
+	pDXDC->PSSetConstantBuffers(1, 1, &m_pCBDirecional);
+	pDXDC->VSSetConstantBuffers(2, 1, &m_pCBMaterial);
+	pDXDC->PSSetConstantBuffers(2, 1, &m_pCBMaterial);
 }
 
 HRESULT Shader::LoadShader(const TCHAR * filename, _LAYOUT layout)
@@ -243,8 +264,6 @@ HRESULT Shader::CreateInputLayout(_LAYOUT layout)
 	if (FAILED(hr))
 		return hr;
 
-	//m_pLayouts[layout] = m_pLayout;
-
 	return hr;
 }
 
@@ -252,12 +271,22 @@ HRESULT Shader::CreateConstantBuffer()
 {
 	HRESULT hr = S_OK;
 
-	hr = CreateDynamicConstantBuffer(sizeof(cbMatrix), &m_cbMatrix, &m_pCBMatrix);
+	::memset(&m_cbShared, NULL, sizeof(cbGlobal));
+	hr = CreateDynamicConstantBuffer(sizeof(cbGlobal), &m_cbShared, &m_pCBShared);
 	if (FAILED(hr))
 		return hr;
 
-	m_cbTime = XMFLOAT4(0, 0, 0, 0);
-	hr = CreateDynamicConstantBuffer(sizeof(XMFLOAT4), &m_cbTime, &m_pCBTime);
+	::memset(&m_cbDirectional, NULL, sizeof(cbDIRECTIONAL));
+	m_cbDirectional.vDiffuse = XMFLOAT4(1, 1, 1, 1);
+	m_cbDirectional.vAmbient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1);
+	m_cbDirectional.vSpecular = XMFLOAT4(0.5f, 0.5f, 0.5f, 1);
+	m_cbDirectional.vDirection = XMFLOAT4(-1.0f, -3.0f, 2.0f, 1);
+	hr = CreateDynamicConstantBuffer(sizeof(cbDIRECTIONAL), &m_cbDirectional, &m_pCBDirecional);
+	if (FAILED(hr))
+		return hr;
+
+	::memset(&m_cbMaterial, NULL, sizeof(cbMaterial));
+	hr = CreateDynamicConstantBuffer(sizeof(cbMaterial), &m_cbMaterial, &m_pCBMaterial);
 	if (FAILED(hr))
 		return hr;
 
@@ -329,10 +358,20 @@ HRESULT Shader::UpdateDynamicConstantBuffer(ID3D11Resource * pBuff, LPVOID pData
 
 void Shader::ReleaseConstantBuffer()
 {
-	if(m_pCBTime != nullptr)
+	if (m_pCBShared != nullptr)
 	{
-		m_pCBTime->Release();
-		m_pCBTime = nullptr;
+		m_pCBShared->Release();
+		m_pCBShared = nullptr;
+	}
+	if (m_pCBDirecional != nullptr)
+	{
+		m_pCBDirecional->Release();
+		m_pCBDirecional = nullptr;
+	}
+	if (m_pCBMaterial != nullptr)
+	{
+		m_pCBMaterial->Release();
+		m_pCBMaterial = nullptr;
 	}
 }
 
@@ -357,19 +396,54 @@ int Shader::GetShaderError(const TCHAR * msg, HRESULT hr, ID3DBlob * pBlob, cons
 
 void Shader::SetMatrix(MATRIX type, XMFLOAT4X4 & matrix)
 {
-	m_cbMatrix.Matrix[type] = XMLoadFloat4x4(&matrix);
+	//m_cbMatrix.Matrix[type] = XMLoadFloat4x4(&matrix);
 
-	m_cbMatrix.Matrix[MATRIX::MVP] =
-		m_cbMatrix.Matrix[MATRIX::WORLD] *
-		m_cbMatrix.Matrix[MATRIX::VIEW] *
-		m_cbMatrix.Matrix[MATRIX::PROJ];
+	//m_cbMatrix.Matrix[MATRIX::MVP] =
+	//	m_cbMatrix.Matrix[MATRIX::WORLD] *
+	//	m_cbMatrix.Matrix[MATRIX::VIEW] *
+	//	m_cbMatrix.Matrix[MATRIX::PROJ];
 
-	UpdateDynamicConstantBuffer(m_pCBMatrix, &m_cbMatrix, sizeof(cbMatrix));
+	//UpdateDynamicConstantBuffer(m_pCBMatrix, &m_cbMatrix, sizeof(cbMatrix));
+
+	if (type >= MATRIX::VIEW)
+	{
+		switch (type)
+		{
+		case MATRIX::VIEW:
+			m_cbShared.mView = matrix;
+			break;
+		case MATRIX::PROJ:
+			m_cbShared.mProj = matrix;
+		}
+
+		XMMATRIX mView = XMLoadFloat4x4(&m_cbShared.mView);
+		XMMATRIX mProj = XMLoadFloat4x4(&m_cbShared.mProj);
+		XMMATRIX mVP = mView * mProj;
+		XMStoreFloat4x4(&m_cbShared.mVP, mVP);
+
+		UpdateDynamicConstantBuffer(m_pCBShared, &m_cbShared, sizeof(cbGlobal));
+	}
+	else
+	{
+		m_cbMaterial.mWorld = matrix;
+
+		UpdateDynamicConstantBuffer(m_pCBMaterial, &m_cbMaterial, sizeof(cbMaterial));
+	}
 }
 
 void Shader::SetTime(XMFLOAT4 & vTime)
 {
-	m_cbTime = vTime;
+	//m_cbTime = vTime;
+	m_cbShared.vTime = vTime;
 
-	UpdateDynamicConstantBuffer(m_pCBTime, &m_cbTime, sizeof(XMFLOAT4));
+	UpdateDynamicConstantBuffer(m_pCBShared, &m_cbShared, sizeof(XMFLOAT4));
+}
+
+void Shader::SetMaterial(Material * mat)
+{
+	m_cbMaterial.vDiffuse = mat->vDiffuse;
+	m_cbMaterial.vAmbient = mat->vAmbient;
+	m_cbMaterial.vSpecular = mat->vSpecular;
+
+	UpdateDynamicConstantBuffer(m_pCBMaterial, &m_cbMaterial, sizeof(cbMaterial));
 }

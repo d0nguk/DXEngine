@@ -14,6 +14,9 @@ int WINAPI WinMain
 		//_CrtSetBreakAlloc(154);
 	}
 
+	TCHAR enter = L'\n';
+	int size = sizeof(enter);
+
 	Device device(hInst);
 
 	if (device.Init())

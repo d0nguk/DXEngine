@@ -9,7 +9,8 @@
 
 GameObject::GameObject() :
 	m_pTransform(nullptr),
-	m_pMeshRenderer(nullptr)
+	m_pMeshRenderer(nullptr),
+	m_wTexname(nullptr)
 {
 
 }

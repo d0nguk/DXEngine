@@ -8,16 +8,16 @@ Camera* g_pCamera = nullptr;
 Camera::Camera() :
 	m_pTarget(nullptr)
 {
-	m_fOffsetX = 5.0f;
-	m_fOffsetY = 5.0f;
-	m_fOffsetZ = -5.0f;
+	m_fOffsetX =  25.0f;
+	m_fOffsetY =  25.0f;
+	m_fOffsetZ = -25.0f;
 
 	m_vEye = XMFLOAT3(m_fOffsetX, m_fOffsetY, m_fOffsetZ);
 	m_vLookAt = XMFLOAT3(0, 0, 0);
 	m_vUp = XMFLOAT3(0, 1, 0);
 
 	m_fZNear = 1.0f;
-	m_fZFar = 100.0f;
+	m_fZFar = 1000.0f;
 
 	m_fViewY = 0.0f;
 
@@ -61,14 +61,17 @@ void Camera::Update(float dTime)
 	//m_vEye.y += m_fOffsetY;
 	//m_vEye.z += m_fOffsetZ;
 
-	if (CINPUT::GetKeyPressed(DIK_W))
-		m_vLookAt.y += dTime;
-	if (CINPUT::GetKeyPressed(DIK_S))
-		m_vLookAt.y -= dTime;
-	if (CINPUT::GetKeyPressed(DIK_A))
-		m_vLookAt.x -= dTime;
-	if (CINPUT::GetKeyPressed(DIK_D))
-		m_vLookAt.x += dTime;
+	if (!CINPUT::GetKeyPressed(DIK_LCONTROL))
+	{
+		if (CINPUT::GetKeyPressed(DIK_W))
+			m_vLookAt.y += dTime;
+		if (CINPUT::GetKeyPressed(DIK_S))
+			m_vLookAt.y -= dTime;
+		if (CINPUT::GetKeyPressed(DIK_A))
+			m_vLookAt.x -= dTime;
+		if (CINPUT::GetKeyPressed(DIK_D))
+			m_vLookAt.x += dTime;
+	}
 
 	m_vEye.x = m_vLookAt.x + m_fOffsetX;
 	m_vEye.y = m_vLookAt.y + m_fOffsetY;
@@ -179,25 +182,25 @@ XMFLOAT3 Camera::ScreenToWorldPoint3D(XMFLOAT3 _vScreen)
 	XMFLOAT3 fWorld = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMVECTOR vScreen = XMVectorZero();
 
-	vScreen = XMVectorSetX(vScreen, ((_vScreen.x / m_fWidth) - 0.5f) * 2.0f); // Convert To -1 <= x <= 1
-	vScreen = XMVectorSetY(vScreen, -((_vScreen.y / m_fHeight) - 0.5f) * 2.0f); // Convert To -1 <= y <= 1
+	vScreen = XMVectorSetX(vScreen, (((2.0f*_vScreen.x) / m_fWidth) - 1.0f)); // Convert To -1 <= x <= 1
+	vScreen = XMVectorSetY(vScreen, (((-2.0f*_vScreen.y) / m_fHeight) + 1.0f)); // Convert To -1 <= y <= 1
 	vScreen = XMVectorSetZ(vScreen, 1.0f);
 
-	XMMATRIX InverseProj = XMMatrixInverse(&XMMatrixDeterminant(XMLoadFloat4x4(&m_mProj)), XMLoadFloat4x4(&m_mProj));
-	vScreen = XMVector3TransformCoord(vScreen, InverseProj);
-	//vScreen = XMVectorSetX(vScreen, XMVectorGetX(vScreen) / m_mProj._11);
-	//vScreen = XMVectorSetY(vScreen, XMVectorGetY(vScreen) / m_mProj._22);
+	//XMMATRIX InverseProj = XMMatrixInverse(&XMMatrixDeterminant(XMLoadFloat4x4(&m_mProj)), XMLoadFloat4x4(&m_mProj));
+	//vScreen = XMVector3TransformCoord(vScreen, InverseProj);
+	vScreen = XMVectorSetX(vScreen, XMVectorGetX(vScreen) / m_mProj._11);
+	vScreen = XMVectorSetY(vScreen, XMVectorGetY(vScreen) / m_mProj._22);
 
 	XMMATRIX InverseView = XMMatrixInverse(NULL, XMLoadFloat4x4(&m_mView));
 	vScreen = XMVector3TransformCoord(vScreen, InverseView);
-	XMStoreFloat3(&fWorld, vScreen);
+	vScreen -= XMLoadFloat3(&m_vEye);
 
 	XMVECTOR dir = XMVector3Normalize(vScreen);
-	float len = -m_vEye.y / XMVectorGetY(dir);
+	float len = (m_fViewY - m_vEye.y) / XMVectorGetY(dir);
 
 	XMStoreFloat3(&fWorld, dir);
 	fWorld.x = m_vEye.x + fWorld.x * len;
-	fWorld.y = m_vEye.y + fWorld.y * len;
+	fWorld.y = m_fViewY;// m_vEye.y + fWorld.y * len;
 	fWorld.z = m_vEye.z + fWorld.z * len;
 
 	return fWorld;

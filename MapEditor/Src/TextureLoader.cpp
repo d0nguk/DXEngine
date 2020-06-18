@@ -49,6 +49,7 @@ void TextureLoader::Release()
 					//iter->second->Release();
 					delete iter->second;
 					iter->second = nullptr;
+					::memset((void*)iter->first, NULL, sizeof(const TCHAR*));
 				}
 			}
 		}

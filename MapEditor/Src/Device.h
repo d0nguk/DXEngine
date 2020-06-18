@@ -147,10 +147,41 @@ private:
 	void ReleaseManager();
 
 private:
+	void SaveMap();
+	void LoadMap();
+
+	wchar_t* CharToWChar(const char* pstrSrc)
+	{
+		int nLen = strlen(pstrSrc) + 1;
+		wchar_t* pwstr = (LPWSTR)malloc(sizeof(wchar_t)* nLen);
+		//mbstowcs(pwstr, pstrSrc, nLen);
+		mbstowcs_s(nullptr, pwstr, nLen, pstrSrc, nLen);
+		return pwstr;
+	}
+	char* WCharToChar(const wchar_t* pwstrSrc)
+	{
+//#if !defined _DEBUG
+//		int len = 0;
+//		len = (wcslen(pwstrSrc) + 1) * 2;
+//		char* pstr = (char*)malloc(sizeof(char) * len);
+//		WideCharToMultiByte(949, 0, pwstrSrc, -1, pstr, len, NULL, NULL);
+//#else
+		int nLen = wcslen(pwstrSrc);
+		char* pstr = (char*)malloc(sizeof(char) * nLen + 1);
+		//wcstombs(pstr, pwstrSrc, nLen + 1);
+		wcstombs_s(nullptr, pstr, nLen + 1, pwstrSrc, nLen + 1);
+//#endif
+		return pstr;
+	}
+
+
+private:
 	XMFLOAT4		m_vTime;
 
-	std::vector<iGameObject*> *m_pObjVector;
+	std::vector<iGameObject*> *m_pTerrain;
 	std::vector<Quad*> *m_pTexList;
+	std::vector<iGameObject*> *tempObj;
+
 	iGameObject	*m_pCursor;
 
 	Camera			*m_pCamera;

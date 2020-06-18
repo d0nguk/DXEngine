@@ -9,7 +9,9 @@
 
 GameObject::GameObject() :
 	m_pTransform(nullptr),
-	m_pMeshRenderer(nullptr)
+	m_pMeshRenderer(nullptr),
+	m_wTexname(nullptr),
+	m_pMaterial(nullptr)
 {
 
 }
@@ -29,10 +31,20 @@ BOOL GameObject::Init(XMFLOAT3 vPos)
 	if (pMesh == nullptr)
 		return FALSE;
 
+#pragma region SetMaterial
+	m_pMaterial = new Material();
+	m_pMaterial->pShader = Shader::GetShader(_SHADER::SHADER_TERRAIN);
+	
+	m_pMaterial->vDiffuse = XMFLOAT4(1, 1, 1, 1);
+	m_pMaterial->vAmbient = XMFLOAT4(1, 1, 1, 1);
+	m_pMaterial->vSpecular = XMFLOAT4(1, 1, 1, 100.0f);
+#pragma endregion
+
 	m_pMeshRenderer = new MeshRenderer();
-	m_pMeshRenderer->SetShader(g_pShader);
 	m_pMeshRenderer->SetMesh(pMesh);
-	m_pMeshRenderer->SetTexture(L"..\\Data\\Textures\\drock.jpg");
+	m_pMeshRenderer->SetMaterial(m_pMaterial);
+
+	XMStoreFloat4x4(&mReflect, XMMatrixIdentity());
 
 	return TRUE;
 }
@@ -49,15 +61,21 @@ void GameObject::LateUpdate(float dTime)
 
 void GameObject::Render(float dTime)
 {
-	ID3D11DeviceContext* pDXDC = Device::GetDXDC();
-
 	XMFLOAT4X4 mTM = m_pTransform->GetTM();
+	XMMATRIX mTMR = XMLoadFloat4x4(&mTM);
+	mTMR = mTMR * XMLoadFloat4x4(&mReflect);
+	XMStoreFloat4x4(&mTM, mTMR);
 	m_pMeshRenderer->SetMatrix(mTM);
 	m_pMeshRenderer->Render();
 }
 
 void GameObject::Release()
 {
+	if (m_pMaterial != nullptr)
+	{
+		delete m_pMaterial;
+		m_pMaterial = nullptr;
+	}
 	if (m_pTransform != nullptr)
 	{
 		delete m_pTransform;

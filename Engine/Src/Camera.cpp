@@ -8,8 +8,8 @@ Camera* g_pCamera = nullptr;
 Camera::Camera() :
 	m_pTarget(nullptr)
 {
-	m_fOffsetX = 5.0f;
-	m_fOffsetY = 5.0f;
+	m_fOffsetX =  0.0f;
+	m_fOffsetY =  5.0f;
 	m_fOffsetZ = -5.0f;
 
 	m_vEye = XMFLOAT3(m_fOffsetX, m_fOffsetY, m_fOffsetZ);
@@ -31,8 +31,8 @@ BOOL Camera::Init(float width, float height, float fov)
 {
 	Resize(width, height, fov);
 
-	g_pShader->SetMatrix(MATRIX::VIEW, m_mViews[m_View]);
-	g_pShader->SetMatrix(MATRIX::PROJ, m_mProjs[m_View]);
+	//Shader::g_pCurrent->SetMatrix(MATRIX::VIEW, m_mViews[m_View]);
+	//Shader::g_pCurrent->SetMatrix(MATRIX::PROJ, m_mProjs[m_View]);
 
 	return TRUE;
 }
@@ -40,34 +40,19 @@ BOOL Camera::Init(float width, float height, float fov)
 void Camera::Update(float dTime)
 {
 	// 카메라 이동
-	//if (m_pTarget != nullptr)
-	//{
-	//	m_vEye.x = m_pTarget->Position.x;
-	//	m_vEye.y = m_pTarget->Position.y;
-	//	m_vEye.z = m_pTarget->Position.z;
-
-	//	m_vLookAt = m_vEye;
-	//}
-	//else
-	//{
-	//	m_vEye.x = 0.0f;
-	//	m_vEye.y = 0.0f;
-	//	m_vEye.z = 0.0f;
-	//}
-	//
-	//m_vEye.x += m_fOffsetX;
-	//m_vEye.y += m_fOffsetY;
-	//m_vEye.z += m_fOffsetZ;
-
-	if (CINPUT::GetKeyPressed(DIK_W))
-		m_vLookAt.y += dTime;
-	if (CINPUT::GetKeyPressed(DIK_S))
-		m_vLookAt.y -= dTime;
-	if (CINPUT::GetKeyPressed(DIK_A))
-		m_vLookAt.x -= dTime;
-	if (CINPUT::GetKeyPressed(DIK_D))
-		m_vLookAt.x += dTime;
-
+	if (m_pTarget != nullptr)
+	{
+		m_vLookAt.x = m_pTarget->Position.x;
+		m_vLookAt.y = m_pTarget->Position.y;
+		m_vLookAt.z = m_pTarget->Position.z;
+	}
+	else
+	{
+		m_vEye.x = 0.0f;
+		m_vEye.y = 0.0f;
+		m_vEye.z = 0.0f;
+	}
+	
 	m_vEye.x = m_vLookAt.x + m_fOffsetX;
 	m_vEye.y = m_vLookAt.y + m_fOffsetY;
 	m_vEye.z = m_vLookAt.z + m_fOffsetZ;
@@ -79,9 +64,6 @@ void Camera::LateUpdate(float dTime)
 
 	CreateViewMatrix();
 	CreateProjMatrix();
-
-	g_pShader->SetMatrix(MATRIX::VIEW, m_mViews[m_View]);
-	g_pShader->SetMatrix(MATRIX::PROJ, m_mProjs[m_View]);
 }
 
 void Camera::Resize(float width, float height, float fov)
@@ -95,14 +77,17 @@ void Camera::Resize(float width, float height, float fov)
 
 	CreateViewMatrix();
 	CreateProjMatrix();
-
-	g_pShader->SetMatrix(MATRIX::VIEW, m_mViews[m_View]);
-	g_pShader->SetMatrix(MATRIX::PROJ, m_mProjs[m_View]);
 }
 
 void Camera::Release()
 {
 
+}
+
+void Camera::SetMatrix()
+{
+	Shader::g_pCurrent->SetMatrix(MATRIX::VIEW, m_mViews[m_View]);
+	Shader::g_pCurrent->SetMatrix(MATRIX::PROJ, m_mProjs[m_View]);
 }
 
 void Camera::CreateViewMatrix()

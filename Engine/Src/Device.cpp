@@ -5,7 +5,15 @@
 #include "GeoLoader.h"
 #include "TextureLoader.h"
 
+#include "Character.h"
+#include "Quad.h"
+
+#include <filesystem>
+#include <istream>
+#include <fstream>
+
 Device* Device::pDevice = nullptr;
+std::vector<const TCHAR*> texname;
 
 LRESULT CALLBACK gMsgProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -53,10 +61,10 @@ BOOL Device::Init()
 
 		m_pObj = new Character();
 		m_pObj->Init();
-		m_pSphere = new GameObject();
-		m_pSphere->Init();
-
-		m_pObjVector = new std::vector<iGameObject*>();
+		
+		m_pMirror = new Quad();
+		m_pMirror->Init(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		((Quad*)m_pMirror)->SetTexture(L"..\\Data\\Textures\\mirror.jpg");
 	}
 
 	return res;
@@ -72,23 +80,34 @@ BOOL Device::Run()
 
 void Device::Release()
 {
+	if (m_pDevice == nullptr)
+		return;
+
+	auto i = texname.begin();
+	for (; i != texname.end(); ++i)
+	{
+		delete (*i);
+		*i = nullptr;
+	}
+	texname.clear();
+
 	if (m_pObj != nullptr)
 	{
 		delete m_pObj;
 		m_pObj = nullptr;
 	}
-	if (m_pSphere != nullptr)
+	if (m_pMirror != nullptr)
 	{
-		delete m_pSphere;
-		m_pSphere = nullptr;
+		delete m_pMirror;
+		m_pMirror = nullptr;
 	}
-	if (m_pObjVector != nullptr)
+	if (m_pTerrain != nullptr)
 	{
-		if (m_pObjVector->size() > 0)
+		if (m_pTerrain->size() > 0)
 		{
-			auto iter = m_pObjVector->begin();
+			auto iter = m_pTerrain->begin();
 
-			for (; iter != m_pObjVector->end(); ++iter)
+			for (; iter != m_pTerrain->end(); ++iter)
 			{
 				if (*iter != nullptr)
 				{
@@ -98,9 +117,9 @@ void Device::Release()
 			}
 		}
 
-		m_pObjVector->clear();
-		delete m_pObjVector;
-		m_pObjVector = nullptr;
+		m_pTerrain->clear();
+		delete m_pTerrain;
+		m_pTerrain = nullptr;
 	}
 
 	ReleaseData();
@@ -212,7 +231,7 @@ BOOL Device::MessagePump()
 			Update();
 			LateUpdate();
 			Render();
-			PrintInfo();
+			//PrintInfo();
 			Flip();
 		}
 	}
@@ -377,7 +396,7 @@ HRESULT Device::CreateDepthStencilView()
 	td.Height = m_Mode.Height;
 	td.MipLevels = 1;
 	td.ArraySize = 1;
-	td.Format = DXGI_FORMAT_D32_FLOAT;
+	td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	td.SampleDesc.Count = m_iAA;
 	td.SampleDesc.Quality = 0;
 	td.Usage = D3D11_USAGE_DEFAULT;
@@ -433,6 +452,10 @@ HRESULT Device::CreateStateObject()
 	if (FAILED(hr))
 		return hr;
 
+	hr = CreateBlendState();
+	if (FAILED(hr))
+		return hr;
+
 	return hr;
 }
 
@@ -458,8 +481,17 @@ HRESULT Device::CreateRasterState()
 	if (FAILED(hr))
 		return hr;
 
+	//rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+	rd.FrontCounterClockwise = TRUE;
+	rd.DepthClipEnable = TRUE;
+	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState[_RASTER::RS_SOLID_FRONT]);
+	if (FAILED(hr))
+		return hr;
+
 	rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+	rd.FrontCounterClockwise = FALSE;
+	rd.DepthClipEnable = FALSE;
 
 	hr = m_pDevice->CreateRasterizerState(&rd, &m_pRState[_RASTER::RS_WIREFRAME_NONE]);
 	if (FAILED(hr))
@@ -477,23 +509,62 @@ HRESULT Device::CreateDepthStencilState()
 	D3D11_DEPTH_STENCIL_DESC dd;
 	::memset(&dd, NULL, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
-	// ZWrite On, ZTest On
+	// ZWrite Off
+	dd.DepthEnable = FALSE;								// Default : TRUE  
+	dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;		// Default : D3D11_DEPTH_WRITE_MASK_ALL
+	dd.DepthFunc = D3D11_COMPARISON_LESS;				// Default : D3D11_COMPARISON_LESS
+	dd.StencilEnable = FALSE;							// Default : FALSE
+	dd.StencilReadMask = 0xff;							// Default : 0xff
+	dd.StencilWriteMask = 0xff;							// Default : 0xff
+	// dd.FrontFace, dd.BackFace
+	/*
+	dd.FrontFace와 dd.BackFace의 자료형은 D3D11_DEPTH_STENCILOP_DESC
+	해당 구조체는
+	D3D11_STENCIL_OP		StencilFailOp		( Default : D3D11_STENCIL_OP_KEEP )
+	D3D11_STENCIL_OP		StencilDepthFailOp	( Default : D3D11_STENCIL_OP_KEEP )
+	D3D11_STENCIL_OP		StencilPassOp		( Default : D3D11_STENCIL_OP_KEEP )
+	D3D11_COMPARISON_FUNC 	StencilFunc			( Default : D3D11_COMPARISON_LESS )
+	로 구성되어 있다
+	*/
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_OFF]);
+	if (FAILED(hr))
+		return hr;
+
+	// Z Write On, Z Test Off
 	dd.DepthEnable = TRUE;
-	dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dd.DepthFunc = D3D11_COMPARISON_LESS;
-	dd.StencilEnable = FALSE;
-
-	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_ON]);
-	if (FAILED(hr))
-		return hr;
-
 	dd.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
-
-	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_OFF]);
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_OFF]);
 	if (FAILED(hr))
 		return hr;
 
-	m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DS_WRITE_ON_TEST_ON], 0);
+	// Z Write On, Z Test On
+	dd.DepthFunc = D3D11_COMPARISON_LESS;
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_ON]);
+	if (FAILED(hr))
+		return hr;
+
+	// Stencil Mirror
+	dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	dd.StencilEnable = TRUE;
+	dd.FrontFace.StencilFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+	dd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+	dd.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_REPLACE;
+	dd.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dd.BackFace = dd.FrontFace;
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::STENCIL_MIRROR]);
+	if (FAILED(hr))
+		return hr;
+
+	// Stencil Reflection
+	dd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dd.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+	dd.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	dd.BackFace = dd.FrontFace;
+	hr = m_pDevice->CreateDepthStencilState(&dd, &m_pDSState[_DEPTHSTENCIL::STENCIL_REFLECTION]);
+	if (FAILED(hr))
+		return hr;
+
+	m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_ON], 0);
 
 	return hr;
 }
@@ -539,8 +610,46 @@ HRESULT Device::CreateSamplerState()
 	return hr;
 }
 
+HRESULT Device::CreateBlendState()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_BLEND_DESC bd;
+	::memset(&bd, NULL, sizeof(D3D11_BLEND_DESC));
+
+	bd.AlphaToCoverageEnable = false;
+	bd.IndependentBlendEnable = false;
+
+	// Render Target은 최대 8개까지 세팅이 가능하기 때문에
+	// D3D11_BLEND_DESC 안에는 D3D11_RENDER_TARGET_BLEND_DESC 자료형 변수가 8개짜리 배열로 있습니다
+	// 따라서 각각의 렌더타겟에 대해 설정해줄 수 있게 됩니다
+	bd.RenderTarget[0].BlendEnable = TRUE;
+	bd.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	bd.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	bd.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	hr = m_pDevice->CreateBlendState(&bd, &m_pBState[_BLEND::BS_DEFAULT]);
+	if (FAILED(hr))
+		return hr;
+
+	bd.RenderTarget[0].RenderTargetWriteMask = 0;
+	hr = m_pDevice->CreateBlendState(&bd, &m_pBState[_BLEND::BS_NORENDER]);
+	if (FAILED(hr))
+		return hr;
+
+	float blendFactors[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	m_pDXDC->OMSetBlendState(m_pBState[_BLEND::BS_DEFAULT], blendFactors, 0xffffffff);
+
+	return hr;
+}
+
 void Device::ReleaseStateObject()
 {
+	ReleaseBlendState();
 	ReleaseSamplerState();
 	ReleaseDepthStencilState();
 	ReleaseRasterState();
@@ -582,6 +691,18 @@ void Device::ReleaseSamplerState()
 	}
 }
 
+void Device::ReleaseBlendState()
+{
+	for (int i = 0; i < _BLEND::BS_MAX; ++i)
+	{
+		if (m_pBState[i] != nullptr)
+		{
+			m_pBState[i]->Release();
+			m_pBState[i] = nullptr;
+		}
+	}
+}
+
 void Device::ClearBackBuffer()
 {
 	//XMFLOAT4 col = XMFLOAT4(0, 0.125f, 0.3f, 1);
@@ -589,7 +710,7 @@ void Device::ClearBackBuffer()
 	XMFLOAT4 col = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	m_pDXDC->ClearRenderTargetView(m_pRenderTarget, (float*)&col);
-	m_pDXDC->ClearDepthStencilView(m_pDSView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_pDXDC->ClearDepthStencilView(m_pDSView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void Device::Update()
@@ -610,35 +731,13 @@ void Device::Update()
 	if (CINPUT::GetKeyPressed(DIK_MINUS))
 		CTIMER::SpeedDown();
 
-	g_pShader->SetTime(m_vTime);
+	//Shader::g_pCurrent->SetTime(m_vTime);
 
 	//m_pCamera->Update();
 	m_pObj->Update(m_vTime.x);
-	m_pSphere->Update(m_vTime.x);
-
-	static bool bClick = false;
-
-	//if (CINPUT::GetLButtonDown())
-	if(!bClick)
+	m_pMirror->Update(m_vTime.x);
+	for (auto* Obj : *m_pTerrain)
 	{
-		iGameObject *tmp = new GameObject();
-		int mx = 0, my = 0;
-		CINPUT::GetMousePosition(mx, my);
-		XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
-		tmp->Init(vWorld);
-
-		m_pObjVector->push_back(tmp);
-
-		bClick = true;
-	}
-
-	for (iGameObject* Obj : *m_pObjVector)
-	{
-		int mx = 0, my = 0;
-		CINPUT::GetMousePosition(mx, my);
-		XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 0.0f));
-
-		((GameObject*)Obj)->SetPos(vWorld);
 		Obj->Update(m_vTime.x);
 	}
 }
@@ -647,9 +746,8 @@ void Device::LateUpdate()
 {
 	m_pCamera->LateUpdate(m_vTime.x);
 	m_pObj->LateUpdate(m_vTime.x);
-	m_pSphere->LateUpdate(m_vTime.x);
-
-	for (iGameObject* Obj : *m_pObjVector)
+	m_pMirror->LateUpdate(m_vTime.x);
+	for (auto* Obj : *m_pTerrain)
 	{
 		Obj->LateUpdate(m_vTime.x);
 	}
@@ -657,14 +755,83 @@ void Device::LateUpdate()
 
 void Device::Render()
 {
+#pragma region AASASGASGGASDASGD
+	/*
+	// Object Rendering
+	XMMATRIX mMirror = XMMatrixIdentity();
+	XMFLOAT4X4 fMirror;
+	XMStoreFloat4x4(&fMirror, mMirror);
+
+	//m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_ON], 1);
+	//for (auto* Obj : *m_pTerrain)
+	//{
+	//	((GameObject*)Obj)->SetReflect(fMirror);
+	//	Obj->Render();
+	//}
+	((GameObject*)m_pObj)->SetReflect(fMirror);
 	m_pObj->Render();
-	//m_pSphere->Render();
 
-	for (iGameObject* Obj : *m_pObjVector)
-	{
-		Obj->Render();
-	}
+	// Mirror Write
+	float blendFactors[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	//m_pDXDC->OMSetBlendState(m_pBState[_BLEND::BS_NORENDER], blendFactors, 0xffffffff);
+	//m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::STENCIL_MIRROR], 1);
+	//m_pMirror->Render();
 
+	// Make Mirror Matrix
+	XMVECTOR vPlane = XMLoadFloat4(&((Quad*)m_pMirror)->GetPlane());
+	mMirror = XMMatrixReflect(vPlane);
+	XMStoreFloat4x4(&fMirror, mMirror);
+
+	// Reflect Object Render
+	m_pDXDC->RSSetState(m_pRState[_RASTER::RS_SOLID_FRONT]);
+	m_pDXDC->OMSetBlendState(m_pBState[_BLEND::BS_DEFAULT], blendFactors, 0xffffffff);
+	m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_ON], 0);
+	//m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::STENCIL_REFLECTION], 1);
+	//for (auto* Obj : *m_pTerrain)
+	//{
+	//	((GameObject*)Obj)->SetReflect(fMirror);
+	//	Obj->Render();
+	//}
+	((GameObject*)m_pObj)->SetReflect(fMirror);
+	m_pObj->Render();
+
+	// Mirror Render
+	//m_pDXDC->RSSetState(m_pRState[_RASTER::RS_SOLID_BACK]);
+	//m_pDXDC->OMSetDepthStencilState(m_pDSState[_DEPTHSTENCIL::DEPTH_WRITE_ON_TEST_ON], 0);
+	//m_pMirror->Render();
+	*/
+#pragma endregion
+
+	//for (auto* Obj : *m_pTerrain)
+	//{
+	//	Obj->Render();
+	//}
+	XMMATRIX mMirror = XMMatrixIdentity();
+	XMFLOAT4X4 fMirror;
+	XMStoreFloat4x4(&fMirror, mMirror);
+
+	((GameObject*)m_pObj)->SetReflect(fMirror);
+	m_pObj->Render();
+
+	XMVECTOR vPlane = XMLoadFloat4(&((Quad*)m_pMirror)->GetPlane());
+	mMirror = XMMatrixReflect(vPlane);
+	XMStoreFloat4x4(&fMirror, mMirror);
+
+	((GameObject*)m_pObj)->SetReflect(fMirror);
+	m_pObj->Render();
+
+	/*
+	-> Render Object
+	-> Set Blend [BS_NORENDER]
+	-> Set Depth [STENCIL_MIRROR]
+	-> Mirror Write
+	-> Set Raster [RS_SOLID_FRONT]
+	-> Set Depth [STENCIL_REFLECTION]
+	-> Render Reflected Object
+	-> Set Depth [DEPTH_WRITE_ON_TEST_ON]
+	-> Set Blend [BS_DEFAULT]
+	-> Render Mirror
+	*/
 }
 
 void Device::PrintInfo()
@@ -672,19 +839,9 @@ void Device::PrintInfo()
 	CFONT::Begin();
 
 	int y = -13;
-	CFONT::PrintInfo(1, y+=14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
 	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Play Time : %.2f(s)", m_vTime.w);
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"%s", CINPUT::GetLButtonDown() ? L"True" : L"False");
-
-	int mx, my;
-	CINPUT::GetMousePosition(mx, my);
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(Screen) : (%d, %d)", mx, my);
-	XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(float(mx), float(my), 10.0f));
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f, %.2f)", vWorld.x, vWorld.y, vWorld.z);
-	//XMFLOAT3 vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(800.0f, 450.0f, 0.0f));
-	//CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f)", vWorld.x, vWorld.y);
-	//vWorld = g_pCamera->ScreenToWorldPoint(XMFLOAT3(0.0f, 0.0f, 0.0f));
-	//CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Mouse(World) : (%.2f, %.2f)", vWorld.x, vWorld.y);
+	CFONT::PrintInfo(1, y += 28, XMFLOAT4(1, 1, 1, 1), L"Directional Light : (1.0f, -1.0f, 3.0f)");
 
 	CFONT::End();
 }
@@ -697,6 +854,9 @@ void Device::Flip()
 BOOL Device::LoadData()
 {
 	BOOL res = TRUE;
+
+	m_pTerrain = new std::vector<iGameObject*>();
+	m_pTerrain->clear();
 
 	if (FAILED(LoadShader()))
 		return FALSE;
@@ -713,6 +873,8 @@ BOOL Device::LoadData()
 	if (!res)
 		return res;
 
+	LoadMap();
+
 	return res;
 }
 
@@ -728,14 +890,46 @@ HRESULT Device::LoadShader()
 {
 	HRESULT hr = S_OK;
 
-	m_pShader = new Shader();
-	hr = m_pShader->Create(L"..\\Src\\hlsl\\SolidColor_pnu.fx", _LAYOUT::L_POS_NRM_UV1);
+	Shader *pShader = nullptr;
+	_LAYOUT layoutTag = _LAYOUT::LAYOUT_MAX;
+	_SHADER shaderTag = _SHADER::SHADER_MAX;
+	
+	pShader = new Shader();
+	layoutTag = _LAYOUT::L_POS;
+	shaderTag = _SHADER::SHADER_ERROR;
+	hr = pShader->Create(L"..\\Src\\hlsl\\Error.fx", layoutTag);
 	if (FAILED(hr))
 		return hr;
+	//Shader::g_pShaders[shaderTag] = pShader;
+	Shader::AddShader(pShader, shaderTag);
 
-	g_pShader = m_pShader;
+	pShader = new Shader();
+	layoutTag = _LAYOUT::L_POS_NRM_UV1;
+	shaderTag = _SHADER::SHADER_DEFAULT;
+	hr = pShader->Create(L"..\\Src\\hlsl\\Character.fx", layoutTag);
+	//if (FAILED(hr))
+	//	return hr;
+	//Shader::g_pShaders[shaderTag] = pShader;
+	Shader::AddShader(pShader, shaderTag);
 
-	return hr;
+	pShader = new Shader();
+	shaderTag = _SHADER::SHADER_TERRAIN;
+	hr = pShader->Create(L"..\\Src\\hlsl\\Terrain.fx", layoutTag);
+	//if (FAILED(hr))
+	//	return hr;
+	//Shader::g_pShaders[shaderTag] = pShader;
+	Shader::AddShader(pShader, shaderTag);
+
+	pShader = new Shader();
+	layoutTag = _LAYOUT::L_POS;
+	shaderTag = _SHADER::SHADER_COLOR;
+	hr = pShader->Create(L"..\\Src\\hlsl\\Color.fx", layoutTag);
+	//if (FAILED(hr))
+	//	return hr;
+	//Shader::g_pShaders[shaderTag] = pShader;
+	Shader::AddShader(pShader, shaderTag);
+
+	return S_OK;
 }
 
 BOOL Device::LoadCamera()
@@ -777,11 +971,43 @@ BOOL Device::LoadManager()
 	BufferCreator::Init(m_pDevice);
 	MeshCreator::Init(m_pDevice);
 
-	GeoLoader::Init();
-	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model2.txt", L"cube");
-	GeoLoader::LoadGeometry(L"..\\Data\\Models\\model3.txt", L"sphere");
-
 	TextureLoader::Init(m_pDevice, m_pDXDC);
+
+	namespace fs = std::experimental::filesystem;
+	fs::path _path = "..\\Data\\Textures\\";
+	if (!fs::is_directory(_path))
+		return FALSE;
+
+	std::string filename = "";
+
+	for (const auto& entry : fs::directory_iterator{ _path })
+	{
+		if (fs::is_regular_file(entry.status()))
+		{
+			filename = entry.path().string();
+
+			if (!filename.compare("..\\Data\\Textures\\magenta.jpg"))
+				continue;
+
+			wchar_t* pStr;
+			int strSize = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, NULL, NULL);
+			pStr = new WCHAR[strSize];
+			MultiByteToWideChar(CP_ACP, 0, filename.c_str(), strlen(filename.c_str()) + 1, pStr, strSize);
+
+			texname.push_back(pStr);
+		}
+	}
+	wchar_t* pStr;
+	filename = "..\\Data\\Textures\\magenta.jpg";
+	int strSize = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, NULL, NULL);
+	pStr = new WCHAR[strSize];
+	MultiByteToWideChar(CP_ACP, 0, filename.c_str(), strlen(filename.c_str()) + 1, pStr, strSize);
+	texname.push_back(pStr);
+
+	GeoLoader::Init();
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\cube.txt", L"cube");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\quad.txt", L"quad");
+	GeoLoader::LoadGeometry(L"..\\Data\\Models\\dwarf.txt", L"dwarf", true);
 
 	return res;
 }
@@ -798,13 +1024,7 @@ void Device::ReleaseCamera()
 
 void Device::ReleaseShader()
 {
-	if (m_pShader != nullptr)
-	{
-		delete m_pShader;
-		m_pShader = nullptr;
-	}
-
-	g_pShader = nullptr;
+	Shader::ReleaseShaders();
 }
 
 void Device::ReleaseAddOn()
@@ -817,7 +1037,75 @@ void Device::ReleaseAddOn()
 void Device::ReleaseManager()
 {
 	TextureLoader::Release();
-	GeoLoader::Release();
 	MeshCreator::Release();
 	BufferCreator::Release();
+	GeoLoader::Release();
+}
+
+void Device::LoadMap()
+{
+	std::vector<std::string> tex;
+	std::ifstream file;
+
+	file.open("..\\..\\Extern\\Data\\Maps\\Map.txt", std::ios_base::in);
+
+	if (!file.is_open())
+	{
+		file.close();
+
+		return;
+	}
+
+	int texCount = 0;
+	file >> texCount;
+
+	for (int i = 0; i < texCount; ++i)
+	{
+		std::string str = "";
+
+		file >> str;
+
+		tex.push_back(str);
+	}
+
+	int objCount = 0;
+	file >> objCount;
+	for (int i = 0; i < objCount; ++i)
+	{
+		int x = 0, y = 0, z = 0, index = 0;
+		file >> x >> y >> z >> index;
+
+		XMFLOAT3 vPos = XMFLOAT3(float(x), float(y), float(z));
+		iGameObject *pObj = new GameObject();
+		pObj->Init(vPos);
+		TCHAR *tmp = CharToWChar(tex[index].c_str());
+		bool bFind = false;
+		for (unsigned int j = 0; j < texname.size(); ++j)
+		{
+			if (!wcscmp(tmp, texname[j]))
+			{
+				((GameObject*)pObj)->SetTexture(texname[j]);
+				bFind = true;
+				break;
+			}
+		}
+
+		if (!bFind)
+		{
+			const TCHAR* magenta = L"..\\Data\\Textures\\magenta.jpg";
+			for (unsigned int j = 0; j < texname.size(); ++j)
+			{
+				if (!wcscmp(magenta, texname[j]))
+				{
+					((GameObject*)pObj)->SetTexture(texname[j]);
+					break;
+				}
+			}
+		}
+
+		m_pTerrain->push_back(pObj);
+
+		free(tmp);
+		tmp = nullptr;
+	}
 }

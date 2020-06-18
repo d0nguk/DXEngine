@@ -103,7 +103,43 @@ HRESULT TextureLoader::LoadTextureDDS(const TCHAR * filename)
 {
 	HRESULT hr = E_FAIL;
 
-	
+	TEXTURE* pTexture = new TEXTURE();
+	::memset(pTexture, NULL, sizeof(TEXTURE));
+
+	hr = DirectX::CreateDDSTextureFromFile
+	(
+		m_pDevice,
+		filename,
+		nullptr,
+		&pTexture->pTex
+	);
+
+	if (FAILED(hr))
+	{
+		delete pTexture;
+		pTexture = nullptr;
+
+		return hr;
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC dc;
+	::memset(&dc, NULL, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+	pTexture->pTex->GetDesc(&dc);
+
+	ID3D11Resource *pRes = nullptr;
+	pTexture->pTex->GetResource(&pRes);
+	ID3D11Texture2D *pTex = nullptr;
+	pRes->QueryInterface<ID3D11Texture2D>(&pTex);
+	if (pTex)
+	{
+		pTex->GetDesc(&pTexture->TexDesc);
+	}
+
+	pTex->Release();
+	pRes->Release();
+
+	//m_texMap->insert(std::make_pair(filename, pTexture));
+	m_texMap->operator[](filename) = pTexture;
 
 	return hr;
 }
@@ -162,7 +198,7 @@ HRESULT TextureLoader::LoadTexutreWIC(const TCHAR * filename)
 	pTex->Release();
 	pRes->Release();
 
-	//m_texMap.insert(std::make_pair(filename, pTexture));
+	//m_texMap->insert(std::make_pair(filename, pTexture));
 	m_texMap->operator[](filename) = pTexture;
 
 	return hr;

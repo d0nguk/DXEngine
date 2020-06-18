@@ -6,7 +6,7 @@
 #include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler")
 
-#include "cbMatrix.h"
+#include "cbBuffers.h"
 
 typedef enum tagLAYOUT
 {
@@ -21,11 +21,10 @@ typedef enum tagLAYOUT
 
 typedef enum tagSHADER
 {
-	SHADER_SOLIDCOLOR,
-	SHADER_VERTEXCOLOR,
-	SHADER_VERTEXNORMAL,
-	SHADER_TEXTURE,
-	SHADER_VERTEXNORMALTEXTURE,
+	SHADER_DEFAULT,
+	SHADER_COLOR,
+	SHADER_TERRAIN,
+	SHADER_ERROR,
 
 	SHADER_MAX
 } _SHADER;
@@ -36,6 +35,8 @@ struct LAYOUTS
 	UINT numElements;
 };
 
+struct Material;
+
 class Shader
 {
 public:
@@ -44,16 +45,16 @@ public:
 
 public:
 	HRESULT Create(const TCHAR* filename, _LAYOUT layout);
-	static void Update();
+	void Update();
 	void Release();
 	void SetShader();
 
-private:
+protected:
 	HRESULT LoadShader(const TCHAR* filename, _LAYOUT layout);
 	HRESULT CompileShader(const TCHAR* filename, const char* entry, const char* model, ID3DBlob** ppCode);
 	HRESULT CreateInputLayout(_LAYOUT layout);
 
-	HRESULT CreateConstantBuffer();
+	virtual HRESULT CreateConstantBuffer();
 	HRESULT CreateConstantBuffer(UINT size, ID3D11Buffer** ppCB);
 	HRESULT CreateDynamicConstantBuffer(UINT size, LPVOID pData, ID3D11Buffer** ppCB);
 	HRESULT UpdateDynamicConstantBuffer(ID3D11Resource* pBuff, LPVOID pData, UINT size);
@@ -65,7 +66,38 @@ private:
 public:
 	void SetMatrix(MATRIX type, XMFLOAT4X4 & matrix);
 	void SetTime(XMFLOAT4 & vTime);
+	void SetMaterial(Material * mat);
 
+public:
+	static Shader *g_pCurrent;
+private:
+	static Shader *g_pError;
+private:
+	static Shader *g_pShaders[_SHADER::SHADER_MAX];
+public:
+	static void AddShader(Shader * pShader, _SHADER _tag)
+	{
+		g_pShaders[_tag] = pShader;
+		if (_tag == _SHADER::SHADER_ERROR)
+			g_pError = pShader;
+	}
+	static Shader * GetShader(_SHADER _tag)
+	{
+		return g_pShaders[_tag]->m_bInit ? g_pShaders[_tag] : g_pError;
+	}
+	static void ReleaseShaders()
+	{
+		for (int i = 0; i < _SHADER::SHADER_MAX; ++i)
+		{
+			if (g_pShaders[i] != nullptr)
+			{
+				delete g_pShaders[i];
+				g_pShaders[i] = nullptr;
+			}
+		}
+
+		g_pCurrent = nullptr;
+	}
 public:
 	ID3D11VertexShader*			m_pVS;
 	ID3D11PixelShader*			m_pPS;
@@ -74,11 +106,14 @@ public:
 
 	ID3D11InputLayout*			m_pLayout;
 
-	ID3D11Buffer*				m_pCBMatrix;
-	ID3D11Buffer*				m_pCBTime;
+	ID3D11Buffer				*m_pCBShared;
+	ID3D11Buffer				*m_pCBDirecional;
+	ID3D11Buffer				*m_pCBMaterial;
 
-	cbMatrix					m_cbMatrix;
-	XMFLOAT4					m_cbTime;
+	cbGlobal					m_cbShared;
+	cbDIRECTIONAL				m_cbDirectional;
+	cbMaterial					m_cbMaterial;
+
+private:
+	bool						m_bInit;
 };
-
-extern Shader* g_pShader;

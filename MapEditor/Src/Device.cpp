@@ -6,6 +6,8 @@
 #include "TextureLoader.h"
 
 #include <filesystem>
+#include <iostream>
+#include <fstream>
 
 Device* Device::pDevice = nullptr;
 
@@ -65,6 +67,9 @@ BOOL Device::Init()
 
 BOOL Device::Run()
 {
+	//GameObject *pTmpasdmfpasgd = new GameObject();
+	//pTmpasdmfpasgd->Init();
+
 	if (!MessagePump())
 		return FALSE;
 
@@ -73,25 +78,31 @@ BOOL Device::Run()
 
 void Device::Release()
 {
+	if (m_pDevice == nullptr)
+		return;
+
+	SaveMap();
+
 	auto i = texname.begin();
 	for (; i != texname.end(); ++i)
 	{
 		delete (*i);
 		*i = nullptr;
 	}
+	texname.clear();
 
 	if (m_pCursor != nullptr)
 	{
 		delete m_pCursor;
 		m_pCursor = nullptr;
 	}
-	if (m_pObjVector != nullptr)
+	if (m_pTerrain != nullptr)
 	{
-		if (m_pObjVector->size() > 0)
+		if (m_pTerrain->size() > 0)
 		{
-			auto iter = m_pObjVector->begin();
+			auto iter = m_pTerrain->begin();
 
-			for (; iter != m_pObjVector->end(); ++iter)
+			for (; iter != m_pTerrain->end(); ++iter)
 			{
 				if (*iter != nullptr)
 				{
@@ -101,10 +112,31 @@ void Device::Release()
 			}
 		}
 
-		m_pObjVector->clear();
-		delete m_pObjVector;
-		m_pObjVector = nullptr;
+		m_pTerrain->clear();
+		delete m_pTerrain;
+		m_pTerrain = nullptr;
 	}
+	if (tempObj != nullptr)
+	{
+		if (tempObj->size() > 0)
+		{
+			auto iter = tempObj->begin();
+
+			for (; iter != tempObj->end(); ++iter)
+			{
+				if (*iter != nullptr)
+				{
+					delete (*iter);
+					(*iter) = nullptr;
+				}
+			}
+		}
+
+		tempObj->clear();
+		delete tempObj;
+		tempObj = nullptr;
+	}
+
 	if (m_pTexList != nullptr)
 	{
 		if (m_pTexList->size() > 0)
@@ -647,6 +679,21 @@ void Device::Update()
 			m_renderMode = RENDERMODE(m_renderMode & !(RENDERMODE::ROTATECAM));
 	}
 
+	if (CINPUT::GetKeyPressedDown(DIK_R))
+	{
+		auto iter = m_pTerrain->begin();
+		for (; iter != m_pTerrain->end(); ++iter)
+		{
+			delete *iter;
+			*iter = nullptr;
+		}
+
+		m_pTerrain->clear();
+		delete m_pTerrain;
+		m_pTerrain = nullptr;
+		m_pTerrain = new std::vector<iGameObject*>();
+	}
+
 	int mx = 0, my = 0;
 	CINPUT::GetMousePosition(mx, my);
 	XMFLOAT3 vWorld = XMFLOAT3(0, 0, 0);
@@ -661,30 +708,123 @@ void Device::Update()
 		vWorld.z = roundf(vWorld.z);
 		((GameObject*)m_pCursor)->SetPos(vWorld);
 
-		if (CINPUT::GetMouseButton(0))
+		if (CINPUT::GetKeyPressed(DIK_LSHIFT))
 		{
-			XMVECTOR vL = XMLoadFloat3(&vWorld);
-			XMVECTOR vR = XMVectorZero();
+			static float sx = 0.0f, sz = 0.0f;
+			static float ex = 0.0f, ez = 0.0f;
 
-			auto iter = m_pObjVector->begin();
-
-			for (; iter != m_pObjVector->end(); ++iter)
+			if (CINPUT::GetMouseButtonDown(0))
 			{
-				GameObject* pObj = (GameObject*)*iter;
-
-				vR = XMLoadFloat3(&pObj->GetPos());
-
-				if (XMVector3Equal(vL, vR))
-					break;
+				sx = vWorld.x;
+				sz = vWorld.z;
 			}
-
-			if (iter == m_pObjVector->end())
+			else if (CINPUT::GetMouseButtonUp(0))
 			{
-				iGameObject *tmp = new GameObject();
-				tmp->Init(vWorld);
-				((GameObject*)tmp)->SetTexture(texname[m_texIndex]);
+				auto iter = tempObj->begin();
+				for (; iter != tempObj->end(); ++iter)
+				{
+					GameObject *pL = (GameObject*)(*iter);
+					auto iter2 = m_pTerrain->begin();
+					bool bExist = false;
+					for (; iter2 != m_pTerrain->end(); ++iter2)
+					{
+						GameObject *pR = (GameObject*)(*iter2);
+						
+						if (pL->GetPos().x == pR->GetPos().x && pL->GetPos().z == pR->GetPos().z)
+						{
+							bExist = true;
+						}
+					}
+					if (bExist)
+					{
+						if ((*iter) != nullptr)
+						{
+							delete *iter;
+							*iter = nullptr;
+						}
+					}
+					else
+						m_pTerrain->push_back(*iter);					
+				}
+				tempObj->clear();
+			}
+			else if (CINPUT::GetMouseButton(0))
+			{
+				if (ex != vWorld.x || ez != vWorld.z)
+				{
+					auto iter = tempObj->begin();
+					for (; iter != tempObj->end(); ++iter)
+					{
+						if ((*iter) != nullptr)
+						{
+							delete *iter;
+							*iter = nullptr;
+						}
+					}
+					tempObj->clear();
 
-				m_pObjVector->push_back(tmp);
+					ex = vWorld.x;
+					ez = vWorld.z;
+
+					float left = 0.0f, top = 0.0f, right = 0.0f, bottom = 0.0f;
+					left = sx < ex ? sx : ex;
+					top = sz < ez ? sz : ez;
+					right = sx < ex ? ex : sx;
+					bottom = sz < ez ? ez : sz;
+
+					for (int i = left; i <= right; ++i)
+					{
+						for (int j = top; j <= bottom; ++j)
+						{
+							iGameObject *tmp = new GameObject();
+							tmp->Init(XMFLOAT3(i, 0.0f, j));
+							((GameObject*)tmp)->SetTexture(texname[m_texIndex]);
+							tempObj->push_back(tmp);
+						}
+					}
+				}
+			}
+		}
+		else if (CINPUT::GetKeyPressedUp(DIK_LSHIFT))
+		{
+			auto iter = tempObj->begin();
+			for (; iter != tempObj->end(); ++iter)
+			{
+				if ((*iter) != nullptr)
+				{
+					delete *iter;
+					*iter = nullptr;
+				}
+			}
+			tempObj->clear();
+		}
+		else
+		{
+			if (CINPUT::GetMouseButton(0))
+			{
+				XMVECTOR vL = XMLoadFloat3(&vWorld);
+				XMVECTOR vR = XMVectorZero();
+
+				auto iter = m_pTerrain->begin();
+
+				for (; iter != m_pTerrain->end(); ++iter)
+				{
+					GameObject* pObj = (GameObject*)*iter;
+
+					vR = XMLoadFloat3(&pObj->GetPos());
+
+					if (XMVector3Equal(vL, vR))
+						break;
+				}
+
+				if (iter == m_pTerrain->end())
+				{
+					iGameObject *tmp = new GameObject();
+					tmp->Init(vWorld);
+					((GameObject*)tmp)->SetTexture(texname[m_texIndex]);
+
+					m_pTerrain->push_back(tmp);
+				}
 			}
 		}
 
@@ -693,9 +833,9 @@ void Device::Update()
 			XMVECTOR vL = XMLoadFloat3(&vWorld);
 			XMVECTOR vR = XMVectorZero();
 
-			auto iter = m_pObjVector->begin();
+			auto iter = m_pTerrain->begin();
 
-			for (; iter != m_pObjVector->end(); ++iter)
+			for (; iter != m_pTerrain->end(); ++iter)
 			{
 				GameObject* pObj = (GameObject*)*iter;
 
@@ -704,7 +844,7 @@ void Device::Update()
 				if (XMVector3Equal(vL, vR))
 				{
 					iGameObject *tmp = *iter;
-					m_pObjVector->erase(iter);
+					m_pTerrain->erase(iter);
 					delete tmp;
 					tmp = nullptr;
 
@@ -717,13 +857,17 @@ void Device::Update()
 		{
 			if (CINPUT::GetKeyPressedDown(DIK_Z))
 			{
-				if (m_pObjVector->size() > 0)
+				if (m_pTerrain->size() > 0)
 				{
-					iGameObject* tmp = m_pObjVector->operator[](m_pObjVector->size() - 1);
-					m_pObjVector->pop_back();
+					iGameObject* tmp = m_pTerrain->operator[](m_pTerrain->size() - 1);
+					m_pTerrain->pop_back();
 					delete tmp;
 					tmp = nullptr;
 				}
+			}
+			else if (CINPUT::GetKeyPressedDown(DIK_S))
+			{
+				SaveMap();
 			}
 		}
 		#pragma endregion
@@ -736,7 +880,7 @@ void Device::Update()
 
 		if (CINPUT::GetMouseButtonDown(0))
 		{
-			for (int i = 0; i < texname.size(); ++i)
+			for (unsigned int i = 0; i < texname.size() - 1; ++i)
 			{
 				if (m_pTexList->operator[](i)->CheckBoundary(vWorld))
 				{
@@ -755,7 +899,7 @@ void Device::Update()
 
 	((GameObject*)m_pCursor)->SetTexture(texname[m_texIndex]);
 	m_pCursor->Update(m_vTime.x);
-	for (iGameObject* Obj : *m_pObjVector)
+	for (iGameObject* Obj : *m_pTerrain)
 	{
 		Obj->Update(m_vTime.x);
 	}
@@ -764,13 +908,22 @@ void Device::Update()
 	{
 		Obj->Update(m_vTime.x);
 	}
+
+	for (iGameObject* Obj : *tempObj)
+	{
+		Obj->Update(m_vTime.x);
+	}
+
+	//SaveMap();
 }
 
 void Device::LateUpdate()
 {	
+	g_pCamera->LateUpdate(m_vTime.x);
+
 	g_pCamera->Set3D();
 	m_pCursor->LateUpdate(m_vTime.x);
-	for (iGameObject* Obj : *m_pObjVector)
+	for (iGameObject* Obj : *m_pTerrain)
 	{
 		Obj->LateUpdate(m_vTime.x);
 	}
@@ -780,6 +933,11 @@ void Device::LateUpdate()
 	{
 		Obj->LateUpdate(m_vTime.x);
 	}
+	for (iGameObject* Obj : *tempObj)
+	{
+		Obj->LateUpdate(m_vTime.x);
+	}
+
 }
 
 void Device::Render()
@@ -787,7 +945,7 @@ void Device::Render()
 	g_pCamera->Set3D();
 	
 	m_pCursor->Render();
-	for (iGameObject* Obj : *m_pObjVector)
+	for (iGameObject* Obj : *m_pTerrain)
 	{
 		Obj->Render();
 	}
@@ -800,6 +958,11 @@ void Device::Render()
 			Obj->Render();
 		}
 	}
+	for (iGameObject* Obj : *tempObj)
+	{
+		Obj->Render();
+	}
+
 }
 
 void Device::PrintInfo()
@@ -809,7 +972,7 @@ void Device::PrintInfo()
 	int y = -13;
 	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Delta Time : %.6f(s)", m_vTime.x);
 	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Play Time : %.2f(s)", m_vTime.w);
-	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Object Count : %d", m_pObjVector->size());
+	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Object Count : %d", m_pTerrain->size());
 
 	CFONT::PrintInfo(1, y += 14, XMFLOAT4(1, 1, 1, 1), L"Render Mode : %s",
 		m_renderMode == RENDERMODE::EDITMAP ? L"Edit Map" :
@@ -830,11 +993,14 @@ BOOL Device::LoadData()
 {
 	BOOL res = TRUE;
 
-	m_pObjVector = new std::vector<iGameObject*>();
-	m_pObjVector->clear();
+	m_pTerrain = new std::vector<iGameObject*>();
+	m_pTerrain->clear();
 
 	m_pTexList = new std::vector<Quad*>();
 	m_pTexList->clear();
+
+	tempObj = new std::vector<iGameObject*>();
+	tempObj->clear();
 
 	if (FAILED(LoadShader()))
 		return FALSE;
@@ -853,6 +1019,8 @@ BOOL Device::LoadData()
 
 	m_pCursor = new GameObject();
 	m_pCursor->Init();
+
+	LoadMap();
 
 	return res;
 }
@@ -941,6 +1109,9 @@ BOOL Device::LoadManager()
 		{
 			filename = entry.path().string();
 
+			if (!filename.compare("..\\Data\\Textures\\magenta.jpg"))
+				continue;
+
 			wchar_t* pStr;
 			int strSize = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, NULL, NULL);
 			pStr = new WCHAR[strSize];
@@ -949,9 +1120,19 @@ BOOL Device::LoadManager()
 			texname.push_back(pStr);
 		}
 	}
+	wchar_t* pStr = nullptr;
+	filename = "..\\Data\\Textures\\magenta.jpg";
+	int strSize = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, NULL, NULL);
+	pStr = new WCHAR[strSize];
+	MultiByteToWideChar(CP_ACP, 0, filename.c_str(), strlen(filename.c_str()) + 1, pStr, strSize);
+	texname.push_back(pStr);
 
-	for (int i = 0; i < texname.size(); ++i)
+	int posOffset = 0;
+	for (unsigned int i = 0; i < texname.size(); ++i)
 	{
+		if (!wcscmp(texname[i], L"..\\Data\\Textures\\magenta.jpg"))
+			continue;
+
 		pTex = TextureLoader::GetTexture(texname[i]);
 		pQuad = new Quad();
 		pQuad->Init();
@@ -959,7 +1140,8 @@ BOOL Device::LoadManager()
 
 		m_pTexList->push_back(pQuad);
 
-		m_pTexList->operator[](i)->SetPos(XMFLOAT3(m_Mode.Width * 0.5f - 100, m_Mode.Height * 0.5f - 100 - (i * 175), 0));
+		m_pTexList->operator[](posOffset)->SetPos(XMFLOAT3(m_Mode.Width * 0.5f - 100, m_Mode.Height * 0.5f - 100 - (posOffset * 175), 0));
+		++posOffset;
 	}
 
 	return res;
@@ -991,6 +1173,152 @@ void Device::ReleaseAddOn()
 	CTIMER::Release();
 	CINPUT::Release();
 	CFONT::Release();
+}
+
+void Device::SaveMap()
+{
+	std::ofstream file;
+	std::string enter = "\n";
+	char buff[1024] = { '\0' };
+
+	file.open("..\\..\\Extern\\Data\\Maps\\Map.txt", std::ios_base::out);
+
+	if (!file.is_open())
+	{
+		// Error
+	}
+
+	sprintf_s(buff, 1024, "%d", texname.size() - 1);
+	file.write(buff, strlen(buff));
+	file.write(enter.c_str(), enter.length());
+	for (unsigned int i = 0; i < texname.size() - 1; ++i)
+	{
+		char *tmp = WCharToChar(texname[i]);
+		std::string str = "";
+
+		str = tmp + enter;
+		file.write(str.c_str(), str.length());
+		
+		free(tmp);
+		tmp = nullptr;
+	}
+	file.write(enter.c_str(), enter.length());
+
+	sprintf_s(buff, 1024, "%d", m_pTerrain->size());
+	file.write(buff, strlen(buff));
+	file.write(enter.c_str(), enter.length());
+	for (unsigned int i = 0; i < m_pTerrain->size(); ++i)
+	{
+		std::string str = "";
+
+		char pos[1024] = { '\0', };
+		GameObject* pObj = (GameObject*)(m_pTerrain->operator[](i));
+		XMFLOAT3 vPos = pObj->GetPos();
+		sprintf_s(pos, 1024, "%d %d %d ",
+			int(vPos.x),
+			int(vPos.y - 1.0f),
+			int(vPos.z)
+		);
+
+		char* sL = WCharToChar(pObj->GetTextureName());
+		char* sR = nullptr;
+		str = sL;
+
+		for (unsigned int i = 0; i < texname.size(); ++i)
+		{
+			sR = WCharToChar(texname[i]);
+
+			if (!str.compare(sR))
+			{
+				sprintf_s(buff, 1024, "%d", i);
+				free(sR);
+				sR = nullptr;
+				break;
+			}
+
+			free(sR);
+			sR = nullptr;
+		}
+
+		str = pos;
+		str += buff;
+
+		file.write(str.c_str(), str.length());
+		file.write(enter.c_str(), enter.length());
+
+		free(sL);
+		sL = nullptr;
+	}
+
+	file.close();
+}
+
+void Device::LoadMap()
+{
+	std::vector<std::string> tex;
+	std::ifstream file;
+
+	file.open("..\\..\\Extern\\Data\\Maps\\Map.txt", std::ios_base::in);
+
+	if (!file.is_open())
+	{
+		file.close();
+
+		return;
+	}
+
+	int texCount = 0;
+	file >> texCount;
+
+	for (int i = 0; i < texCount; ++i)
+	{
+		std::string str = "";
+		
+		file >> str;
+
+		tex.push_back(str);
+	}
+
+	int objCount = 0;
+	file >> objCount;
+	for (int i = 0; i < objCount; ++i)
+	{
+		int x = 0, y = 0, z = 0, index = 0;
+		file >> x >> y >> z >> index;
+
+		XMFLOAT3 vPos = XMFLOAT3(float(x), float(y+1), float(z));
+		iGameObject *pObj = new GameObject();
+		pObj->Init(vPos);
+		TCHAR *tmp = CharToWChar(tex[index].c_str());
+		bool bFind = false;
+		for (unsigned int j = 0; j < texname.size(); ++j)
+		{
+			if (!wcscmp(tmp, texname[j]))
+			{
+				((GameObject*)pObj)->SetTexture(texname[j]);
+				bFind = true;
+				break;
+			}
+		}
+
+		if (!bFind)
+		{
+			const TCHAR* magenta = L"..\\Data\\Textures\\magenta.jpg";
+			for (unsigned int j = 0; j < texname.size(); ++j)
+			{
+				if (!wcscmp(magenta, texname[j]))
+				{
+					((GameObject*)pObj)->SetTexture(texname[j]);
+					break;
+				}
+			}
+		}
+
+		m_pTerrain->push_back(pObj);
+
+		free(tmp);
+		tmp = nullptr;
+	}
 }
 
 void Device::ReleaseManager()

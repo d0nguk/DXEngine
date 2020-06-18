@@ -6,7 +6,7 @@
 #include "Shader.h"
 #include "Camera.h"
 
-#include "Character.h"
+#include "iGameObject.h"
 
 #include <vector>
 
@@ -55,11 +55,13 @@ private:
 	HRESULT CreateRasterState();
 	HRESULT CreateDepthStencilState();
 	HRESULT CreateSamplerState();
+	HRESULT CreateBlendState();
 
 	void ReleaseStateObject();
 	void ReleaseRasterState();
 	void ReleaseDepthStencilState();
 	void ReleaseSamplerState();
+	void ReleaseBlendState();
 
 public:
 	static ID3D11Device* GetDevice() { return pDevice->m_pDevice; }
@@ -82,14 +84,19 @@ public:
 	typedef enum tagRasterizerState
 	{
 		RS_SOLID_BACK,
+		RS_SOLID_FRONT,
 		RS_WIREFRAME_NONE,
 
 		RS_MAX
 	} _RASTER;
 	typedef enum tagDepthStencilState
 	{
-		DS_WRITE_ON_TEST_ON,
-		DS_WRITE_ON_TEST_OFF,
+		DEPTH_WRITE_OFF,
+		DEPTH_WRITE_ON_TEST_OFF,
+		DEPTH_WRITE_ON_TEST_ON,
+
+		STENCIL_MIRROR,		// Z Write Off, Z Test On
+		STENCIL_REFLECTION, // Z Write On, Z Test On
 
 		DS_MAX
 	} _DEPTHSTENCIL;
@@ -100,6 +107,13 @@ public:
 
 		SS_MAX
 	} _SAMPLER;
+	typedef enum tagBlendState
+	{
+		BS_DEFAULT,
+		BS_NORENDER,
+
+		BS_MAX
+	} _BLEND;
 
 private:
 	ID3D11Device				*m_pDevice;
@@ -112,6 +126,7 @@ private:
 	ID3D11RasterizerState		*m_pRState[RS_MAX];
 	ID3D11DepthStencilState		*m_pDSState[DS_MAX];
 	ID3D11SamplerState			*m_pSState[SS_MAX];
+	ID3D11BlendState			*m_pBState[BS_MAX];
 
 	DXGI_MODE_DESC				m_Mode;
 
@@ -137,13 +152,40 @@ private:
 	void ReleaseManager();
 
 private:
+	void LoadMap();
+
+	wchar_t* CharToWChar(const char* pstrSrc)
+	{
+		int nLen = strlen(pstrSrc) + 1;
+		wchar_t* pwstr = (LPWSTR)malloc(sizeof(wchar_t)* nLen);
+		//mbstowcs(pwstr, pstrSrc, nLen);
+		mbstowcs_s(nullptr, pwstr, nLen, pstrSrc, nLen);
+		return pwstr;
+	}
+	char* WCharToChar(const wchar_t* pwstrSrc)
+	{
+		//#if !defined _DEBUG
+		//		int len = 0;
+		//		len = (wcslen(pwstrSrc) + 1) * 2;
+		//		char* pstr = (char*)malloc(sizeof(char) * len);
+		//		WideCharToMultiByte(949, 0, pwstrSrc, -1, pstr, len, NULL, NULL);
+		//#else
+		int nLen = wcslen(pwstrSrc);
+		char* pstr = (char*)malloc(sizeof(char) * nLen + 1);
+		//wcstombs(pstr, pwstrSrc, nLen + 1);
+		wcstombs_s(nullptr, pstr, nLen + 1, pwstrSrc, nLen + 1);
+		//#endif
+		return pstr;
+	}
+
+private:
 	XMFLOAT4		m_vTime;
 
-	std::vector<iGameObject*> *m_pObjVector;
-
 	Camera			*m_pCamera;
-	Shader			*m_pShader;
 	iGameObject		*m_pObj;
-	iGameObject		*m_pSphere;
+	iGameObject		*m_pMirror;
+	std::vector<iGameObject*> *m_pTerrain;
 #pragma endregion
 };
+
+extern std::vector<const TCHAR*> texname;

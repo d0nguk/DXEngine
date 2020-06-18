@@ -25,17 +25,32 @@ public:
 	void SetShader(Shader * pShader) { m_pShader = pShader; }
 	const Shader* const GetShader() { return m_pShader; }
 	
-	void SetMesh(MeshData* pMesh) { m_pMesh = pMesh; }
-	void SetVertex(ID3D11Buffer* pBuff) { m_pVertex = pBuff; }
-	void SetMatrix(XMFLOAT4X4 & matrix) { m_pShader->SetMatrix(MATRIX::WORLD, matrix); }
-	void SetTexture(const TCHAR* filename) { m_pTexture = TextureLoader::GetTexture(filename); }
-
-	//void SetMaterial();
+	void SetMesh(MeshData* pMesh)
+	{
+		m_pMesh = pMesh;
+	}
+	void SetMatrix(XMFLOAT4X4 & matrix)
+	{
+		m_pMaterial->pShader->SetMatrix(MATRIX::WORLD, matrix);
+	}
+	void SetTexture(const TCHAR* filename)
+	{
+		m_pTexture = TextureLoader::GetTexture(filename); 
+	}
+	void SetMaterial(Material * pMaterial)
+	{
+		m_pMaterial = pMaterial;
+	}
 
 private:
-	Shader			*m_pShader;
-	MeshData		*m_pMesh;
-	TEXTURE			*m_pTexture;
-	ID3D11Buffer	*m_pVertex;
-	// Material Ãß°¡
+	void SetMaterial()
+	{
+		//m_pMaterial->pShader->SetMaterial();
+	}
+
+private:
+	Shader		*m_pShader;
+	TEXTURE		*m_pTexture;
+	Material	*m_pMaterial;
+	MeshData	*m_pMesh;
 };

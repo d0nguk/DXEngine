@@ -28,6 +28,7 @@
     <ClCompile Include="..\Src\main.cpp" />
     <ClCompile Include="..\Src\MeshCreator.cpp" />
     <ClCompile Include="..\Src\MeshRenderer.cpp" />
+    <ClCompile Include="..\Src\Quad.cpp" />
     <ClCompile Include="..\Src\Shader.cpp" />
     <ClCompile Include="..\Src\TextureLoader.cpp" />
     <ClCompile Include="..\Src\Transform.cpp" />
@@ -36,7 +37,7 @@
     <ClInclude Include="..\Src\BufferCreator.h" />
     <ClInclude Include="..\Src\BufferData.h" />
     <ClInclude Include="..\Src\Camera.h" />
-    <ClInclude Include="..\Src\cbMatrix.h" />
+    <ClInclude Include="..\Src\cbBuffers.h" />
     <ClInclude Include="..\Src\Character.h" />
     <ClInclude Include="..\Src\Device.h" />
     <ClInclude Include="..\Src\dlls.h">
@@ -55,6 +56,7 @@
     <ClInclude Include="..\Src\MeshCreator.h" />
     <ClInclude Include="..\Src\MeshData.h" />
     <ClInclude Include="..\Src\MeshRenderer.h" />
+    <ClInclude Include="..\Src\Quad.h" />
     <ClInclude Include="..\Src\Shader.h" />
     <ClInclude Include="..\Src\stdafx.h" />
     <ClInclude Include="..\Src\TextureLoader.h" />
@@ -62,17 +64,17 @@
     <ClInclude Include="..\Src\Vertices.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Src\hlsl\SolidColor.fx">
+    <FxCompile Include="..\Src\hlsl\Character.fx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Src\hlsl\SolidColor_pnu.fx">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    <FxCompile Include="..\Src\hlsl\Color.fx">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\Error.fx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Src\hlsl\Terrain.fx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
